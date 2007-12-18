@@ -114,40 +114,40 @@ static struct platform_device lbookv3_led_green = {
 
 static struct mtd_partition lbookv3_nand_part[] = {
 	[0] = {
-		.name	= "UNKNOWN",
-		.size	= SZ_1M,
-		.offset	= 0,
-	},
-	[1] = {
 		.name	= "KERNEL",
 		.offset = SZ_1M,
 		.size	= SZ_1M,
 	},
-	[2] = {
+	[1] = {
 		.name	= "BASEFS",
 		.offset = SZ_2M,
 		.size	= SZ_1M*6,
 	},
-	[3] = {
+	[2] = {
 		.name	= "ROOTFS",
 		.offset	= SZ_8M,
 		.size	= SZ_1M*44,
 	},
-	[4] = {
+	[3] = {
 		.name	= "LOGO",
 		.offset = SZ_1M * 52,
 		.size	= SZ_1M,
 	},
-	[5] = {
+	[4] = {
 		.name	= "USERDATA",
 		.offset	= SZ_1M * 0x35,
 		.size	= SZ_2M,
 	},
-	[6] = {
+	[5] = {
 		.name	= "STORAGE",
 		.offset	= SZ_1M * 0x37,
 		.size	= SZ_1M * 9,
-	}
+	},
+	[6] = {
+		.name	= "UNKNOWN",
+		.size	= SZ_1M,
+		.offset	= 0,
+	},
 };
 
 static struct s3c2410_nand_set lbookv3_nand_sets[] = {
