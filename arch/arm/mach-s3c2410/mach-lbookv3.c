@@ -164,9 +164,9 @@ static struct s3c2410_nand_set lbookv3_nand_sets[] = {
 */
 
 static struct s3c2410_platform_nand lbookv3_nand_info = {
-	.tacls		= 20,
+	.tacls		= 30,
 	.twrph0		= 60,
-	.twrph1		= 20,
+	.twrph1		= 30,
 	.nr_sets	= ARRAY_SIZE(lbookv3_nand_sets),
 	.sets		= lbookv3_nand_sets,
 };
@@ -195,7 +195,7 @@ static struct physmap_flash_data lbookv3_nor_flash_data = {
 };
 
 static struct platform_device lbookv3_device_nor = {
-	.name		= "lbookv3-nor",
+	.name		= "mtd-flash",
 	.id		= -1,
 	.dev = {
 		.platform_data = &lbookv3_nor_flash_data,
