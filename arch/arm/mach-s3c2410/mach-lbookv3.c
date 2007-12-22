@@ -195,7 +195,7 @@ static struct physmap_flash_data lbookv3_nor_flash_data = {
 };
 
 static struct platform_device lbookv3_device_nor = {
-	.name		= "mtd-flash",
+	.name		= "physmap-flash",
 	.id		= -1,
 	.dev = {
 		.platform_data = &lbookv3_nor_flash_data,
@@ -218,6 +218,7 @@ static struct platform_device *lbookv3_devices[] __initdata = {
 	&s3c_device_hsmmc,
 	&s3c_device_spi0,
 	&s3c_device_timer0,
+	&s3c_device_sdi,
 	&lbookv3_led_red,
 	&lbookv3_led_green,
 	&lbookv3_device_nor
