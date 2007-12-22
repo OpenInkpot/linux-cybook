@@ -160,9 +160,15 @@ config MTD_NAND_S3C2410_DEBUG
 	help
 	  Enable debugging of the S3C2410 NAND driver
 
+config MTD_NAND_S3C2410_NOECC
+	bool "S3C2410 NAND Disable ECC"
+	depends on MTD_NAND_S3C2410
+	help
+	  Disable ECC on NAND chips. For compatibility with buggy bootloaders
+
 config MTD_NAND_S3C2410_HWECC
 	bool "S3C2410 NAND Hardware ECC"
-	depends on MTD_NAND_S3C2410
+	depends on MTD_NAND_S3C2410 && !MTD_NAND_S3C2410_NOECC
 	help
 	  Enable the use of the S3C2410's internal ECC generator when
 	  using NAND. Early versions of the chip have had problems with
