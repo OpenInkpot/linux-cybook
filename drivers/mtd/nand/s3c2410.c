@@ -64,11 +64,19 @@ static const int clock_stop = 0;
 /* new oob placement block for use with hardware ecc generation
  */
 
+#ifdef CONFIG_ARCH_LBOOK_V3
+static struct nand_ecclayout nand_hw_eccoob = {
+	.eccbytes = 3,
+	.eccpos = {2, 3, 4},
+	.oobfree = {{6, 10}}
+};
+#else
 static struct nand_ecclayout nand_hw_eccoob = {
 	.eccbytes = 3,
 	.eccpos = {0, 1, 2},
 	.oobfree = {{8, 8}}
 };
+#endif
 
 /* controller and mtd information */
 
