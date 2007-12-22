@@ -684,7 +684,11 @@ static void s3c2410_nand_init_chip(struct s3c2410_nand_info *info,
 	chip->select_chip  = s3c2410_nand_select_chip;
 	chip->chip_delay   = 50;
 	chip->priv	   = nmtd;
+#ifdef CONFIG_MTD_NAND_S3C2410_BBT
+	chip->options	   = NAND_USE_FLASH_BBT;
+#else
 	chip->options	   = 0;
+#endif
 	chip->controller   = &info->controller;
 
 	switch (info->cpu_type) {

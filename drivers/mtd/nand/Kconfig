@@ -148,6 +148,12 @@ config MTD_NAND_S3C2410
 	  No board specific support is done by this driver, each board
 	  must advertise a platform_device for the driver to attach.
 
+config MTD_NAND_S3C2410_BBT
+	bool "S3C2410 NAND bad block table"
+	depends on MTD_NAND_S3C2410
+	help
+	  Enable bad block table support for S3C2410 NAND driver
+
 config MTD_NAND_S3C2410_DEBUG
 	bool "S3C2410 NAND driver debug"
 	depends on MTD_NAND_S3C2410
