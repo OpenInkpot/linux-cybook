@@ -65,7 +65,7 @@
 #include <asm/plat-s3c24xx/common-smdk.h>
 
 static struct map_desc lbookv3_iodesc[] __initdata = {
-  /* nothing here yet */
+	{0xe8000000, __phys_to_pfn(S3C2410_CS5), 0x100000, MT_DEVICE}
 };
 
 #define UCON S3C2410_UCON_DEFAULT
@@ -119,32 +119,27 @@ static struct mtd_partition lbookv3_nand_part[] = {
 		.size	= SZ_1M,
 	},
 	[1] = {
-		.name	= "BASEFS",
+		.name	= "ROOTFS",
 		.offset = SZ_2M,
-		.size	= SZ_1M*6,
+		.size	= SZ_1M*50,
 	},
 	[2] = {
-		.name	= "ROOTFS",
-		.offset	= SZ_8M,
-		.size	= SZ_1M*44,
-	},
-	[3] = {
 		.name	= "LOGO",
 		.offset = SZ_1M * 52,
 		.size	= SZ_1M,
 	},
-	[4] = {
+	[3] = {
 		.name	= "USERDATA",
 		.offset	= SZ_1M * 0x35,
 		.size	= SZ_2M,
 	},
-	[5] = {
+	[4] = {
 		.name	= "STORAGE",
 		.offset	= SZ_1M * 0x37,
 		.size	= SZ_1M * 9,
 	},
-	[6] = {
-		.name	= "UNKNOWN",
+	[5] = {
+		.name	= "SPARE",
 		.size	= SZ_1M,
 		.offset	= 0,
 	},
