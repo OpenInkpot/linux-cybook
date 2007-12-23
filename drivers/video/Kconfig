@@ -718,6 +718,17 @@ config FB_N411
          This enables support for the Apollo display controller in its
          Hecuba form using the n411 devkit.
 
+config FB_LBOOKV3
+       tristate "lBook/Jinke eReader V3 support"
+       depends on FB && ARCH_LBOOK_V3 && MMU
+       select FB_SYS_FILLRECT
+       select FB_SYS_COPYAREA
+       select FB_SYS_IMAGEBLIT
+       select FB_SYS_FOPS
+       select FB_DEFERRED_IO
+       help
+         This enables support for the lBook/Jinke eReader V3.
+
 config FB_HGA
 	tristate "Hercules mono graphics support"
 	depends on FB && X86
