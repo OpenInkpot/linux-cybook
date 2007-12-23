@@ -92,6 +92,17 @@ struct mmc_command {
  *              actively failing requests
  */
 
+/* deprecated, will be removed */
+#define MMC_ERR_NONE	0
+#define MMC_ERR_TIMEOUT	1
+#define MMC_ERR_BADCRC	2
+#define MMC_ERR_FIFO	3
+#define MMC_ERR_FAILED	4
+#define MMC_ERR_INVALID	5
+#define MMC_ERR_DMA	6
+#define MMC_ERR_BUSY	7
+#define MMC_ERR_CANCELED	8
+
 	struct mmc_data		*data;		/* data segment associated with cmd */
 	struct mmc_request	*mrq;		/* associated request */
 };
