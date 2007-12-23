@@ -20,6 +20,13 @@ config MTD_NAND_VERIFY_WRITE
 	  device thinks the write was successful, a bit could have been
 	  flipped accidentally due to device wear or something else.
 
+config MTD_NAND_DUMB_BADBLOCK_TRANSLATION
+	bool "Dumb badblock translation"
+	help
+	  "Dumb" badblock translation using spare area in flash 
+	  (by default --- first 64 eraseblocks). Used in Jinke/lBook 
+	  eReader V3 bootloader.
+
 config MTD_NAND_ECC_SMC
 	bool "NAND ECC Smart Media byte order"
 	default n

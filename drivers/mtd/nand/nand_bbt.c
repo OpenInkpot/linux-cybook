@@ -355,6 +355,33 @@ static int scan_block_fast(struct mtd_info *mtd, struct nand_bbt_descr *bd,
 	return 0;
 }
 
+#ifdef CONFIG_MTD_NAND_DUMB_BADBLOCK_TRANSLATION
+static void nand_bbt_add_to_translation_table(struct mtd_info *mtd, int block)
+{
+	struct nand_chip *this = mtd->priv;
+
+	if (this->bb_translation_table_size == NAND_BB_MAP_SPARE_BLOCKS) {
+		printk(KERN_ERR "Badblock translation table is full!\n");
+		return;
+	}
+/* FIXME: doesn't work correctly with many badblocks in spare area! */
+	/* Skip bads in spare area */
+	while (nand_isbad_bbt(mtd, this->bb_translation_table_size << this->phys_erase_shift, 1) && 
+			(this->bb_translation_table_size < NAND_BB_MAP_SPARE_BLOCKS) )
+		this->bb_translation_table_size++;
+
+	if (this->bb_translation_table_size == NAND_BB_MAP_SPARE_BLOCKS) {
+		printk(KERN_ERR "Badblock translation table is full!\n");
+		return;
+	}
+
+	this->bb_translation_table[this->bb_translation_table_size] = block;
+	this->bb_translation_table_size++;
+	printk(KERN_INFO "Add translation of block 0x%x to block 0x%x\n", block, this->bb_translation_table_size);
+
+}
+#endif
+
 /**
  * create_bbt - [GENERIC] Create a bad block table by scanning the device
  * @mtd:	MTD device structure
@@ -430,6 +457,10 @@ static int create_bbt(struct mtd_info *mtd, uint8_t *buf,
 			this->bbt[i >> 3] |= 0x03 << (i & 0x6);
 			printk(KERN_WARNING "Bad eraseblock %d at 0x%08x\n",
 			       i >> 1, (unsigned int)from);
+#ifdef CONFIG_MTD_NAND_DUMB_BADBLOCK_TRANSLATION
+			if (this->options & NAND_USE_DUMB_BB_TRANSLATION)
+				nand_bbt_add_to_translation_table(mtd, i >> 1);
+#endif
 			mtd->ecc_stats.badblocks++;
 		}
 

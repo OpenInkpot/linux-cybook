@@ -193,6 +193,11 @@ typedef enum {
 /* This option is defined if the board driver allocates its own buffers
    (e.g. because it needs them DMA-coherent */
 #define NAND_OWN_BUFFERS	0x00040000
+
+#ifdef CONFIG_MTD_NAND_DUMB_BADBLOCK_TRANSLATION
+#define NAND_USE_DUMB_BB_TRANSLATION 0x00080000
+#endif
+
 /* Options set by nand scan */
 /* Nand scan has allocated controller struct */
 #define NAND_CONTROLLER_ALLOC	0x80000000
@@ -422,6 +427,13 @@ struct nand_chip {
 	struct nand_bbt_descr	*bbt_md;
 
 	struct nand_bbt_descr	*badblock_pattern;
+
+#ifdef CONFIG_MTD_NAND_DUMB_BADBLOCK_TRANSLATION
+	#define NAND_BB_MAP_SPARE_BLOCKS	64
+
+	int				bb_translation_table[NAND_BB_MAP_SPARE_BLOCKS];
+	int				bb_translation_table_size;
+#endif
 
 	void		*priv;
 };

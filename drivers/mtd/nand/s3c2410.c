@@ -697,6 +697,10 @@ static void s3c2410_nand_init_chip(struct s3c2410_nand_info *info,
 #else
 	chip->options	   = 0;
 #endif
+
+#ifdef CONFIG_MTD_NAND_DUMB_BADBLOCK_TRANSLATION
+	chip->options |= NAND_USE_DUMB_BB_TRANSLATION;
+#endif
 	chip->controller   = &info->controller;
 
 	switch (info->cpu_type) {
