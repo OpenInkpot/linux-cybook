@@ -43,6 +43,7 @@
 #include <linux/mtd/physmap.h>
 #include <linux/mtd/nand_ecc.h>
 #include <linux/mtd/partitions.h>
+#include <linux/mmc/host.h>
 
 #include <asm/mach/arch.h>
 #include <asm/mach/map.h>
@@ -55,6 +56,7 @@
 
 #include <asm/arch/leds-gpio.h>
 #include <asm/arch/regs-gpio.h>
+#include <asm/arch/mci.h>
 
 #include <asm/plat-s3c/regs-serial.h>
 #include <asm/plat-s3c/nand.h>
@@ -199,6 +201,28 @@ static struct platform_device lbookv3_device_nor = {
 	.resource	= lbookv3_nor_resource,
 };
 
+static void lbookv3_mmc_set_power(unsigned char power_mode, unsigned short vdd)
+{
+	switch(power_mode) {
+		case MMC_POWER_UP:
+		case MMC_POWER_ON:
+			s3c2410_gpio_cfgpin(S3C2410_GPB6, S3C2410_GPB6_OUTP);
+			s3c2410_gpio_setpin(S3C2410_GPB6, 1);
+			break;
+		case MMC_POWER_OFF:
+		default:
+			s3c2410_gpio_cfgpin(S3C2410_GPB6, S3C2410_GPB6_OUTP);
+			s3c2410_gpio_setpin(S3C2410_GPB6, 0);
+	}
+}
+
+static struct s3c24xx_mci_pdata lbookv3_mmc_cfg = {
+//	.gpio_wprotect	= S3C2410_GPH8,
+	.gpio_detect	= S3C2410_GPF5,
+	.set_power	= &lbookv3_mmc_set_power,
+	.ocr_avail	= MMC_VDD_32_33,
+};
+
 
 static struct platform_device *lbookv3_devices[] __initdata = {
 //	&s3c_device_usb,
@@ -236,8 +260,9 @@ static void __init lbookv3_init(void)
 	s3c2410_gpio_setpin(S3C2410_GPC6, 0);
 
 	s3c_device_nand.dev.platform_data = &lbookv3_nand_info;
+	s3c_device_sdi.dev.platform_data = &lbookv3_mmc_cfg;
+
 	platform_add_devices(lbookv3_devices, ARRAY_SIZE(lbookv3_devices));
-//	smdk_machine_init();
 }
 
 MACHINE_START(LBOOK_V3, "LBOOK_V3") /* @TODO: request a new identifier and switch
