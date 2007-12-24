@@ -53,6 +53,7 @@
 #include <asm/io.h>
 #include <asm/irq.h>
 #include <asm/mach-types.h>
+#include <asm/delay.h>
 
 #include <asm/arch/leds-gpio.h>
 #include <asm/arch/regs-gpio.h>
@@ -63,6 +64,7 @@
 
 #include <asm/plat-s3c24xx/devs.h>
 #include <asm/plat-s3c24xx/cpu.h>
+#include <asm/plat-s3c24xx/udc.h>
 
 #include <asm/plat-s3c24xx/common-smdk.h>
 
@@ -223,6 +225,24 @@ static struct s3c24xx_mci_pdata lbookv3_mmc_cfg = {
 	.ocr_avail	= MMC_VDD_32_33,
 };
 
+static void lbookv3_udc_command(enum s3c2410_udc_cmd_e cmd)
+{
+	switch(cmd) {
+		case S3C2410_UDC_P_DISABLE:
+			s3c2410_gpio_setpin(S3C2410_GPC12, 1);
+			break;
+		case S3C2410_UDC_P_ENABLE:
+			s3c2410_gpio_setpin(S3C2410_GPC12, 0);
+			break;
+		case S3C2410_UDC_P_RESET:
+			break;
+	}
+}
+
+static struct s3c2410_udc_mach_info lbookv3_udc_platform_data = {
+	.udc_command	= lbookv3_udc_command,
+	.vbus_pin	= S3C2410_GPF4,
+};
 
 static struct platform_device *lbookv3_devices[] __initdata = {
 //	&s3c_device_usb,
@@ -243,6 +263,45 @@ static struct platform_device *lbookv3_devices[] __initdata = {
 	&lbookv3_device_nor
 };
 
+static void lbookv3_power_off(void)
+{
+	/* Voodoo from original kernel */
+	s3c2410_gpio_setpin(S3C2410_GPB8, 0);
+	udelay(1000);
+	s3c2410_gpio_setpin(S3C2410_GPB5, 0);
+}
+
+static void __init lbookv3_init_gpio(void)
+{
+	/* LEDs */
+	s3c2410_gpio_cfgpin(S3C2410_GPC5, S3C2410_GPC5_OUTP);
+	s3c2410_gpio_cfgpin(S3C2410_GPC6, S3C2410_GPC6_OUTP);
+	s3c2410_gpio_setpin(S3C2410_GPC5, 0);
+	s3c2410_gpio_setpin(S3C2410_GPC6, 0);
+
+	/* Voodoo from original kernel */
+	s3c2410_gpio_cfgpin(S3C2410_GPB0, S3C2410_GPB0_OUTP);
+	s3c2410_gpio_cfgpin(S3C2410_GPB1, S3C2410_GPB1_OUTP);
+	s3c2410_gpio_cfgpin(S3C2410_GPB5, S3C2410_GPB5_OUTP);
+	s3c2410_gpio_cfgpin(S3C2410_GPB6, S3C2410_GPB6_OUTP);
+	s3c2410_gpio_cfgpin(S3C2410_GPB7, S3C2410_GPB7_OUTP);
+	s3c2410_gpio_cfgpin(S3C2410_GPB8, S3C2410_GPB8_OUTP);
+	s3c2410_gpio_cfgpin(S3C2410_GPB9, S3C2410_GPB9_OUTP);
+	s3c2410_gpio_cfgpin(S3C2410_GPC12, S3C2410_GPC12_OUTP);
+	s3c2410_gpio_cfgpin(S3C2410_GPC13, S3C2410_GPC13_OUTP);
+
+	s3c2410_gpio_setpin(S3C2410_GPB0, 1);
+	s3c2410_gpio_setpin(S3C2410_GPB1, 0);
+	s3c2410_gpio_setpin(S3C2410_GPB5, 1);
+	s3c2410_gpio_setpin(S3C2410_GPB6, 1);
+	s3c2410_gpio_setpin(S3C2410_GPB7, 0);
+	s3c2410_gpio_setpin(S3C2410_GPB8, 1);
+	s3c2410_gpio_setpin(S3C2410_GPB9, 0);
+	s3c2410_gpio_setpin(S3C2410_GPC13, 0);
+
+	s3c2410_gpio_cfgpin(S3C2410_GPF4, S3C2410_GPF4_EINT4);
+}
+
 static void __init lbookv3_map_io(void)
 {
 	s3c24xx_init_io(lbookv3_iodesc, ARRAY_SIZE(lbookv3_iodesc));
@@ -253,16 +312,15 @@ static void __init lbookv3_map_io(void)
 static void __init lbookv3_init(void)
 {
 
-	s3c2410_gpio_cfgpin(S3C2410_GPC5, S3C2410_GPC5_OUTP);
-	s3c2410_gpio_cfgpin(S3C2410_GPC6, S3C2410_GPC6_OUTP);
-
-	s3c2410_gpio_setpin(S3C2410_GPC5, 0);
-	s3c2410_gpio_setpin(S3C2410_GPC6, 0);
+	lbookv3_init_gpio();
 
 	s3c_device_nand.dev.platform_data = &lbookv3_nand_info;
 	s3c_device_sdi.dev.platform_data = &lbookv3_mmc_cfg;
+	s3c_device_usbgadget.dev.platform_data = &lbookv3_udc_platform_data;
 
 	platform_add_devices(lbookv3_devices, ARRAY_SIZE(lbookv3_devices));
+
+	pm_power_off = &lbookv3_power_off;
 }
 
 MACHINE_START(LBOOK_V3, "LBOOK_V3") /* @TODO: request a new identifier and switch
