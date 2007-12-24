@@ -85,7 +85,7 @@ struct lbookv3fb_par {
 static struct fb_fix_screeninfo lbookv3fb_fix __devinitdata = {
 	.id =		"lbookv3fb",
 	.type =		FB_TYPE_PACKED_PIXELS,
-	.visual =	FB_VISUAL_PSEUDOCOLOR,
+	.visual =	FB_VISUAL_STATIC_PSEUDOCOLOR,
 	.xpanstep =	0,
 	.ypanstep =	0,
 	.ywrapstep =	0,
@@ -414,6 +414,8 @@ static int __devinit lbookv3fb_probe(struct platform_device *dev)
 
 	info->fbdefio = &lbookv3fb_defio;
 	fb_deferred_io_init(info);
+
+	fb_alloc_cmap(&info->cmap, 4, 0);
 
 	retval = register_framebuffer(info);
 	if (retval < 0)
