@@ -1,7 +1,7 @@
 #
 # Automatically generated make config: don't edit
 # Linux kernel version: 2.6.23.12
-# Mon Dec 24 18:45:38 2007
+# Mon Dec 31 01:18:14 2007
 #
 CONFIG_ARM=y
 CONFIG_SYS_SUPPORTS_APM_EMULATION=y
@@ -267,7 +267,7 @@ CONFIG_ZBOOT_ROM_TEXT=0x0
 CONFIG_ZBOOT_ROM_BSS=0x0
 CONFIG_CMDLINE="noinitrd root=/dev/mtdblock2 rootfstype=jffs2 console=ttySAC0 loglevel=8"
 # CONFIG_XIP_KERNEL is not set
-# CONFIG_KEXEC is not set
+CONFIG_KEXEC=y
 
 #
 # Floating point emulation
@@ -753,7 +753,7 @@ CONFIG_USB_GADGET_SELECTED=y
 # CONFIG_USB_GADGET_OMAP is not set
 CONFIG_USB_GADGET_S3C2410=y
 CONFIG_USB_S3C2410=y
-CONFIG_USB_S3C2410_DEBUG=y
+# CONFIG_USB_S3C2410_DEBUG is not set
 # CONFIG_USB_GADGET_AT91 is not set
 # CONFIG_USB_GADGET_DUMMY_HCD is not set
 # CONFIG_USB_GADGET_DUALSPEED is not set
@@ -969,7 +969,7 @@ CONFIG_NLS_UTF8=y
 CONFIG_ENABLE_MUST_CHECK=y
 CONFIG_MAGIC_SYSRQ=y
 # CONFIG_UNUSED_SYMBOLS is not set
-# CONFIG_DEBUG_FS is not set
+CONFIG_DEBUG_FS=y
 # CONFIG_HEADERS_CHECK is not set
 CONFIG_DEBUG_KERNEL=y
 # CONFIG_DEBUG_SHIRQ is not set
