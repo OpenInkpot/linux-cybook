@@ -57,6 +57,7 @@
 
 #include <asm/arch/leds-gpio.h>
 #include <asm/arch/regs-gpio.h>
+#include <asm/arch/regs-clock.h>
 #include <asm/arch/mci.h>
 
 #include <asm/plat-s3c/regs-serial.h>
@@ -229,10 +230,10 @@ static void lbookv3_udc_command(enum s3c2410_udc_cmd_e cmd)
 {
 	switch(cmd) {
 		case S3C2410_UDC_P_DISABLE:
-			s3c2410_gpio_setpin(S3C2410_GPC12, 1);
+			s3c2410_gpio_setpin(S3C2410_GPC12, 0);
 			break;
 		case S3C2410_UDC_P_ENABLE:
-			s3c2410_gpio_setpin(S3C2410_GPC12, 0);
+			s3c2410_gpio_setpin(S3C2410_GPC12, 1);
 			break;
 		case S3C2410_UDC_P_RESET:
 			break;
@@ -298,6 +299,7 @@ static void __init lbookv3_init_gpio(void)
 	s3c2410_gpio_setpin(S3C2410_GPB8, 1);
 	s3c2410_gpio_setpin(S3C2410_GPB9, 0);
 	s3c2410_gpio_setpin(S3C2410_GPC13, 0);
+	s3c2410_gpio_setpin(S3C2410_GPC12, 0);
 
 	s3c2410_gpio_cfgpin(S3C2410_GPF4, S3C2410_GPF4_EINT4);
 }
@@ -311,8 +313,16 @@ static void __init lbookv3_map_io(void)
 
 static void __init lbookv3_init(void)
 {
+	unsigned int tmp;
 
 	lbookv3_init_gpio();
+
+
+	tmp =	(0x78 << S3C2410_PLLCON_MDIVSHIFT)
+		| (0x02 << S3C2410_PLLCON_PDIVSHIFT)
+		| (0x03 << S3C2410_PLLCON_SDIVSHIFT);
+	writel(tmp, S3C2410_UPLLCON);
+
 
 	s3c_device_nand.dev.platform_data = &lbookv3_nand_info;
 	s3c_device_sdi.dev.platform_data = &lbookv3_mmc_cfg;
