@@ -31,8 +31,8 @@
 #include <asm/hardware.h>
 #include <asm/io.h>
 
-/* #define debug(fmt, args...) printk(KERN_INFO "%s: " fmt, __FUNCTION__, args) */
-#define debug(fmt, args...)
+#define debug(fmt, args...) printk(KERN_INFO "%s: " fmt, __FUNCTION__, args) 
+//#define debug(fmt, args...)
 
 /* Apollo controller specific defines */
 #define APOLLO_WRITE_TO_FLASH		0x01
@@ -89,6 +89,7 @@ static struct fb_fix_screeninfo lbookv3fb_fix __devinitdata = {
 	.xpanstep =	0,
 	.ypanstep =	0,
 	.ywrapstep =	0,
+	.line_length =	DPY_W / (8 / 8),
 	.accel =	FB_ACCEL_NONE,
 };
 
@@ -97,8 +98,11 @@ static struct fb_var_screeninfo lbookv3fb_var __devinitdata = {
 	.yres		= DPY_H,
 	.xres_virtual	= DPY_W,
 	.yres_virtual	= DPY_H,
+	.red		= {0, 2, 0},
+	.blue		= {0, 2, 0},
+	.green		= {0, 2, 0},
 	.grayscale	= 1,
-	.bits_per_pixel	= 2,
+	.bits_per_pixel	= 8,
 	.nonstd		= 1,
 };
 
@@ -162,9 +166,9 @@ static int __devinit apollo_setuphw(void) {
 	return 0;
 }
 
-static int apollo_wait_for_ack(void)
+static inline int apollo_wait_for_ack(void)
 {
-	int i=500000;
+	int i=5000000;
 
 	while (s3c2410_gpio_getpin(H_ACK)) {
 		if (!i) {
@@ -172,32 +176,32 @@ static int apollo_wait_for_ack(void)
 			return 0;
 		}
 		i--;
-		udelay(10);
+//		udelay(5);
 	}
 
 	return 1;
 }
 
-static int apollo_wait_for_ack_clear(void)
+static inline int apollo_wait_for_ack_clear(void)
 {
-	int i=500000;
+	int i=5000000;
 	while (!s3c2410_gpio_getpin(H_ACK)) {
 		if (!i) {
 			printk(KERN_ERR "%s: H_ACK timeout\n", __FUNCTION__);
 			return 0;
 		}
 		i--;
-		udelay(10);
+//		udelay(5);
 	}
 
 	return 1;
 }
-static void apollo_send_data(unsigned char data)
+static inline void apollo_send_data(unsigned char data)
 {
 
 //	debug("data = 0x%02x\n", data);
-	apollo_set_ctlpin(H_RW, 0);
-	udelay(10);
+//	apollo_set_ctlpin(H_RW, 0);
+//	udelay(10);
 	writeb(data, 0xE8000000);
 	apollo_set_ctlpin(H_DS, 0);
 	apollo_wait_for_ack();
@@ -238,7 +242,7 @@ static unsigned char apollo_get_status(void)
 	apollo_set_gpa_14_15(1);
 	res = apollo_read_data();
 	apollo_set_gpa_14_15(0);
-	printk(KERN_ERR "%s: status = 0x%02x\n", __FUNCTION__, res);
+	debug("%s: status = 0x%02x\n", __FUNCTION__, res);
 	return res;
 }
 
@@ -246,6 +250,7 @@ static void apollo_reinitialize(void)
 {
 	int timeout = 100;
 
+	apollo_set_ctlpin(H_RW, 0);
 	s3c2410_gpio_setpin(S3C2410_GPA14, 1);
 	s3c2410_gpio_setpin(S3C2410_GPA15, 0);
 	s3c2410_gpio_cfgpin(S3C2410_GPE1, S3C2410_GPE1_OUTP);
@@ -261,28 +266,55 @@ static void apollo_reinitialize(void)
 
 /* main lbookv3fb functions */
 
-static void lbookv3fb_dpy_update(struct lbookv3fb_par *par)
+#define pack_4pixels(a, b, c, d)	(((a) << 6) | ((b) << 4) |  ((c) << 2) | (d))
+
+static void lbookv3fb_dpy_update(struct lbookv3fb_par *par, int partially_bytes)
 {
 	int i;
 	unsigned char *buf = (unsigned char __force *)par->info->screen_base;
+//	int count = DPY_W*DPY_H/8 * par->info->var.bits_per_pixel;
+	int count = par->info->fix.smem_len;
+	unsigned char tmp;
 
 	debug("called\n", par);
 
-	apollo_send_command(0xA0);
+	if (partially_bytes)
+		count = partially_bytes;
 
-	for (i=0; i < (DPY_W*DPY_H/8 * par->info->var.bits_per_pixel); i++) {
-		apollo_send_data(*(buf++));
+//	apollo_send_command(APOLLO_MANUAL_REFRESH);
+
+//	apollo_send_command(APOLLO_LOAD_PARTIAL_PICTURE);
+	apollo_send_command(APOLLO_LOAD_PICTURE);
+
+/*	apollo_send_data(0);
+	apollo_send_data(0);
+
+	apollo_send_data(0);
+	apollo_send_data(0);
+
+	apollo_send_data((600 >> 8) & 0xff);
+	apollo_send_data(600 & 0xff);
+
+	apollo_send_data(((count * 4 / 600) >> 8) & 0xff);
+	apollo_send_data((count * 4 / 600) & 0xff);
+*/
+
+	for (i=0; i < count; i += 4) {
+		tmp = pack_4pixels(buf[i], buf[i+1], buf[i+2], buf[i+3]);
+		apollo_send_data(tmp);
+//		apollo_send_data(buf[i]);
 	}
 
-	apollo_send_command(0xA1);
-	apollo_send_command(0xA2);
+	apollo_send_command(APOLLO_STOP_LOADING);
+//	apollo_send_command(APOLLO_DISPLAY_PARTIAL_PICTURE);
+	apollo_send_command(APOLLO_DISPLAY_PICTURE);
 }
 
 /* this is called back from the deferred io workqueue */
 static void lbookv3fb_dpy_deferred_io(struct fb_info *info,
 				struct list_head *pagelist)
 {
-	lbookv3fb_dpy_update(info->par);
+	lbookv3fb_dpy_update(info->par, 0);
 }
 
 static void lbookv3fb_fillrect(struct fb_info *info,
@@ -297,7 +329,7 @@ static void lbookv3fb_fillrect(struct fb_info *info,
 */
 	sys_fillrect(info, rect);
 
-	lbookv3fb_dpy_update(par);
+	lbookv3fb_dpy_update(par, 0);
 }
 
 static void lbookv3fb_copyarea(struct fb_info *info,
@@ -309,7 +341,7 @@ static void lbookv3fb_copyarea(struct fb_info *info,
 
 	sys_copyarea(info, area);
 
-	lbookv3fb_dpy_update(par);
+	lbookv3fb_dpy_update(par, 0);
 }
 
 static void lbookv3fb_imageblit(struct fb_info *info,
@@ -321,7 +353,7 @@ static void lbookv3fb_imageblit(struct fb_info *info,
 
 	sys_imageblit(info, image);
 
-	lbookv3fb_dpy_update(par);
+	lbookv3fb_dpy_update(par, 0);
 }
 
 /*
@@ -360,7 +392,7 @@ static ssize_t lbookv3fb_write(struct fb_info *info, const char __user *buf,
 		err = -EFAULT;
 	}
 
-	lbookv3fb_dpy_update(par);
+	lbookv3fb_dpy_update(par, count + p);
 
 	if (count)
 		return count;
@@ -428,6 +460,7 @@ static int __devinit lbookv3fb_probe(struct platform_device *dev)
 
 	apollo_setuphw();
 	apollo_reinitialize();
+
 
 	apollo_send_command(APOLLO_SET_DEPTH);
 	apollo_send_data(0x02);
