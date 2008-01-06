@@ -1,7 +1,7 @@
 #
 # Automatically generated make config: don't edit
 # Linux kernel version: 2.6.23.12
-# Mon Dec 31 13:10:38 2007
+# Wed Jan  2 00:04:42 2008
 #
 CONFIG_ARM=y
 CONFIG_SYS_SUPPORTS_APM_EMULATION=y
@@ -264,7 +264,7 @@ CONFIG_ALIGNMENT_TRAP=y
 #
 CONFIG_ZBOOT_ROM_TEXT=0x0
 CONFIG_ZBOOT_ROM_BSS=0x0
-CONFIG_CMDLINE="noinitrd root=/dev/nfs nfsroot=192.168.111.2:/srv/nfs/lbook-root  console=ttySAC0 loglevel=8 ip=192.168.111.1 "
+CONFIG_CMDLINE="noinitrd root=/dev/nfs nfsroot=192.168.111.2:/srv/nfs/openinkpot-root  console=ttySAC0 loglevel=8 ip=192.168.111.1 "
 # CONFIG_XIP_KERNEL is not set
 CONFIG_KEXEC=y
 
@@ -771,7 +771,20 @@ CONFIG_USB_ETH_RNDIS=y
 # CONFIG_USB_FILE_STORAGE is not set
 # CONFIG_USB_G_SERIAL is not set
 # CONFIG_USB_MIDI_GADGET is not set
-# CONFIG_MMC is not set
+CONFIG_MMC=m
+CONFIG_MMC_DEBUG=y
+# CONFIG_MMC_UNSAFE_RESUME is not set
+
+#
+# MMC/SD Card Drivers
+#
+CONFIG_MMC_BLOCK=m
+CONFIG_MMC_BLOCK_BOUNCE=y
+
+#
+# MMC/SD Host Controller Drivers
+#
+CONFIG_MMC_S3C=m
 CONFIG_RTC_LIB=y
 CONFIG_RTC_CLASS=y
 CONFIG_RTC_HCTOSYS=y
@@ -990,7 +1003,7 @@ CONFIG_MAGIC_SYSRQ=y
 # CONFIG_HEADERS_CHECK is not set
 CONFIG_DEBUG_KERNEL=y
 # CONFIG_DEBUG_SHIRQ is not set
-# CONFIG_DETECT_SOFTLOCKUP is not set
+CONFIG_DETECT_SOFTLOCKUP=y
 # CONFIG_SCHED_DEBUG is not set
 # CONFIG_SCHEDSTATS is not set
 # CONFIG_TIMER_STATS is not set
