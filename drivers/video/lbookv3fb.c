@@ -80,6 +80,8 @@
 
 struct lbookv3fb_par {
 	struct fb_info *info;
+	struct mutex lock;
+	struct delayed_work deferred_work;
 };
 
 static struct fb_fix_screeninfo lbookv3fb_fix __devinitdata = {
@@ -168,7 +170,7 @@ static int __devinit apollo_setuphw(void) {
 
 static inline int apollo_wait_for_ack(void)
 {
-	int i=5000000;
+	int i=500000;
 
 	while (s3c2410_gpio_getpin(H_ACK)) {
 		if (!i) {
@@ -176,7 +178,7 @@ static inline int apollo_wait_for_ack(void)
 			return 0;
 		}
 		i--;
-//		udelay(5);
+		schedule();
 	}
 
 	return 1;
@@ -184,24 +186,21 @@ static inline int apollo_wait_for_ack(void)
 
 static inline int apollo_wait_for_ack_clear(void)
 {
-	int i=5000000;
+	int i=500000;
+
 	while (!s3c2410_gpio_getpin(H_ACK)) {
 		if (!i) {
 			printk(KERN_ERR "%s: H_ACK timeout\n", __FUNCTION__);
 			return 0;
 		}
 		i--;
-//		udelay(5);
+		schedule();
 	}
 
 	return 1;
 }
 static inline void apollo_send_data(unsigned char data)
 {
-
-//	debug("data = 0x%02x\n", data);
-//	apollo_set_ctlpin(H_RW, 0);
-//	udelay(10);
 	writeb(data, 0xE8000000);
 	apollo_set_ctlpin(H_DS, 0);
 	apollo_wait_for_ack();
@@ -281,6 +280,9 @@ static void lbookv3fb_dpy_update(struct lbookv3fb_par *par, int partially_bytes)
 	if (partially_bytes)
 		count = partially_bytes;
 
+	cancel_delayed_work(&par->deferred_work);
+	mutex_lock(&par->lock);
+
 //	apollo_send_command(APOLLO_MANUAL_REFRESH);
 
 //	apollo_send_command(APOLLO_LOAD_PARTIAL_PICTURE);
@@ -308,6 +310,7 @@ static void lbookv3fb_dpy_update(struct lbookv3fb_par *par, int partially_bytes)
 	apollo_send_command(APOLLO_STOP_LOADING);
 //	apollo_send_command(APOLLO_DISPLAY_PARTIAL_PICTURE);
 	apollo_send_command(APOLLO_DISPLAY_PICTURE);
+	mutex_unlock(&par->lock);
 }
 
 /* this is called back from the deferred io workqueue */
@@ -315,6 +318,13 @@ static void lbookv3fb_dpy_deferred_io(struct fb_info *info,
 				struct list_head *pagelist)
 {
 	lbookv3fb_dpy_update(info->par, 0);
+}
+
+static void lbookv3fb_deferred_work(struct work_struct *work)
+{
+	struct lbookv3fb_par *par = container_of(work, struct lbookv3fb_par, deferred_work.work);
+
+	lbookv3fb_dpy_update(par, 0);
 }
 
 static void lbookv3fb_fillrect(struct fb_info *info,
@@ -329,7 +339,7 @@ static void lbookv3fb_fillrect(struct fb_info *info,
 */
 	sys_fillrect(info, rect);
 
-	lbookv3fb_dpy_update(par, 0);
+	schedule_delayed_work(&par->deferred_work, info->fbdefio->delay);
 }
 
 static void lbookv3fb_copyarea(struct fb_info *info,
@@ -341,7 +351,7 @@ static void lbookv3fb_copyarea(struct fb_info *info,
 
 	sys_copyarea(info, area);
 
-	lbookv3fb_dpy_update(par, 0);
+	schedule_delayed_work(&par->deferred_work, info->fbdefio->delay);
 }
 
 static void lbookv3fb_imageblit(struct fb_info *info,
@@ -353,7 +363,12 @@ static void lbookv3fb_imageblit(struct fb_info *info,
 
 	sys_imageblit(info, image);
 
-	lbookv3fb_dpy_update(par, 0);
+	schedule_delayed_work(&par->deferred_work, info->fbdefio->delay);
+}
+
+int lbookv3fb_cursor(struct fb_info *info, struct fb_cursor *cursor)
+{
+	return 0;
 }
 
 /*
@@ -392,12 +407,20 @@ static ssize_t lbookv3fb_write(struct fb_info *info, const char __user *buf,
 		err = -EFAULT;
 	}
 
-	lbookv3fb_dpy_update(par, count + p);
+	schedule_delayed_work(&par->deferred_work, info->fbdefio->delay);
 
 	if (count)
 		return count;
 
 	return err;
+}
+
+static int lbookv3fb_sync(struct fb_info *info)
+{
+	struct lbookv3fb_par *par = info->par;
+
+	lbookv3fb_dpy_update(par, 0);
+	return 0;
 }
 
 static struct fb_ops lbookv3fb_ops = {
@@ -407,6 +430,8 @@ static struct fb_ops lbookv3fb_ops = {
 	.fb_fillrect	= lbookv3fb_fillrect,
 	.fb_copyarea	= lbookv3fb_copyarea,
 	.fb_imageblit	= lbookv3fb_imageblit,
+	.fb_cursor	= lbookv3fb_cursor,
+	.fb_sync	= lbookv3fb_sync,
 };
 
 static struct fb_deferred_io lbookv3fb_defio = {
@@ -441,6 +466,8 @@ static int __devinit lbookv3fb_probe(struct platform_device *dev)
 	info->fix.smem_len = videomemorysize;
 	par = info->par;
 	par->info = info;
+	mutex_init(&par->lock);
+	INIT_DELAYED_WORK(&par->deferred_work, lbookv3fb_deferred_work);
 
 	info->flags = FBINFO_FLAG_DEFAULT;
 
@@ -448,6 +475,14 @@ static int __devinit lbookv3fb_probe(struct platform_device *dev)
 	fb_deferred_io_init(info);
 
 	fb_alloc_cmap(&info->cmap, 4, 0);
+
+	apollo_setuphw();
+	apollo_reinitialize();
+
+	apollo_send_command(APOLLO_SET_DEPTH);
+	apollo_send_data(0x02);
+	apollo_send_command(APOLLO_ERASE_DISPLAY);
+	apollo_send_data(0x01);
 
 	retval = register_framebuffer(info);
 	if (retval < 0)
@@ -458,14 +493,6 @@ static int __devinit lbookv3fb_probe(struct platform_device *dev)
 	       "fb%d: lbookv3 frame buffer device, using %dK of video memory\n",
 	       info->node, videomemorysize >> 10);
 
-	apollo_setuphw();
-	apollo_reinitialize();
-
-
-	apollo_send_command(APOLLO_SET_DEPTH);
-	apollo_send_data(0x02);
-	apollo_send_command(APOLLO_ERASE_DISPLAY);
-	apollo_send_data(0x01);
 
 	return 0;
 err1:
@@ -478,9 +505,13 @@ err:
 static int __devexit lbookv3fb_remove(struct platform_device *dev)
 {
 	struct fb_info *info = platform_get_drvdata(dev);
+	struct lbookv3fb_par *par = info->par;
 
 	if (info) {
 		fb_deferred_io_cleanup(info);
+		cancel_delayed_work(&par->deferred_work);
+		flush_scheduled_work();
+
 		unregister_framebuffer(info);
 		vfree((void __force *)info->screen_base);
 		framebuffer_release(info);
