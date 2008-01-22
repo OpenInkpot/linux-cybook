@@ -323,4 +323,14 @@ config KEYBOARD_SH_KEYSC
 
 	  To compile this driver as a module, choose M here: the
 	  module will be called sh_keysc.
+
+config KEYBOARD_LBOOK_V3
+       tristate "lBook eReader V3 Buttons"
+       depends on GENERIC_GPIO && ARCH_LBOOK_V3
+       help
+         Driver for lBook/Jinke eReader V3 keys.
+
+         To compile this driver as a module, choose M here: the
+         module will be called gpio-keys.
+
 endif
