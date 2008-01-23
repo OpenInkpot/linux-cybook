@@ -1859,6 +1859,9 @@ static int s3c2410_udc_probe(struct platform_device *pdev)
 	s3c2410_udc_disable(udc);
 	s3c2410_udc_reinit(udc);
 
+	/* for USB device disconnect detection on host */
+	mdelay(1000);
+
 	/* irq setup after old hardware state is cleaned up */
 	retval = request_irq(IRQ_USBD, s3c2410_udc_irq,
 			IRQF_DISABLED, gadget_name, udc);
