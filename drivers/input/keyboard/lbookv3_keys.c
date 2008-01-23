@@ -2,6 +2,7 @@
  * Driver for lBook/Jinke eReader V3 keys
  *
  * Copyright 2008 Eugene Konev <ejka@imfi.kspu.ru>
+ * Copyright 2008 Yauhen Kharuzhy <jekhor@gmail.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -52,11 +53,32 @@ static struct gpio_line lines[3] = {
 	},
 };
 
+static irqreturn_t lbookv3_powerkey_isr(int irq, void *dev_id)
+{
+	struct input_dev *input = dev_id;
+
+	s3c2410_gpio_cfgpin(S3C2410_GPF6, S3C2410_GPF6_INP);
+
+	if (gpio_get_value(S3C2410_GPF6))
+		input_event(input, EV_KEY, KEY_POWER, 0);
+	else
+		input_event(input, EV_KEY, KEY_POWER, 1);
+
+	input_sync(input);
+
+	s3c2410_gpio_cfgpin(S3C2410_GPF6, S3C2410_GPF6_EINT6);
+
+	return IRQ_HANDLED;
+}
+
 static irqreturn_t lbookv3_keys_isr(int irq, void *dev_id)
 {
 	int i, j;
 	struct gpio_line *line;
 	struct input_dev *input = dev_id;
+
+	for (i = S3C2410_GPF0; i <= S3C2410_GPF2; i++)
+		s3c2410_gpio_cfgpin(i, S3C2410_GPIO_INPUT);
 
 	for (i = S3C2410_GPF0; i <= S3C2410_GPF2; i++) {
 		line = &lines[i - S3C2410_GPF0];
@@ -67,18 +89,20 @@ static irqreturn_t lbookv3_keys_isr(int irq, void *dev_id)
 				if (line->state & (1 << j)) {
 					input_event(input, EV_KEY,
 						    line->codes[j], 0);
+					input_sync(input);
 				}
 			line->state = 0;
 			continue;
 		}
 
-		s3c2410_gpio_cfgpin(i, S3C2410_GPIO_INPUT);
 
 		for (j = 0; j < ARRAY_SIZE(pullups); j++)
-			gpio_set_value(pullups[j], 1);
+			do {
+				gpio_set_value(pullups[j], 1);
+			} while (!gpio_get_value(pullups[j]));
 
 		mdelay(10);
-		
+
 		for (j = 0; j < ARRAY_SIZE(pullups); j++) {
 			gpio_set_value(pullups[j], 0);
 			udelay(10);
@@ -92,10 +116,19 @@ static irqreturn_t lbookv3_keys_isr(int irq, void *dev_id)
 		}
 
 		for (j = 0; j < ARRAY_SIZE(pullups); j++)
-			gpio_set_value(pullups[j], 0);
+			while (gpio_get_value(pullups[j]))
+				gpio_set_value(pullups[j], 0);
 
-		s3c2410_gpio_cfgpin(i, S3C2410_GPIO_SFN2);
+		udelay(10);
+
+		for (j = 0; j < ARRAY_SIZE(pullups); j++)
+			printk("%d ", gpio_get_value(pullups[j]));
+
+		printk("\n");
 	}
+
+	for (i = S3C2410_GPF0; i <= S3C2410_GPF2; i++)
+		s3c2410_gpio_cfgpin(i, S3C2410_GPIO_SFN2);
 
 	return IRQ_HANDLED;
 }
@@ -107,8 +140,8 @@ static int __init lbookv3_keys_init(void)
 	struct gpio_line *line;
 
 	for (i = 0; i < ARRAY_SIZE(pullups); i++) {
-		s3c2410_gpio_cfgpin(i, S3C2410_GPIO_OUTPUT);
-		gpio_set_value(i, 0);
+		s3c2410_gpio_cfgpin(pullups[i], S3C2410_GPIO_OUTPUT);
+		gpio_set_value(pullups[i], 0);
 	}
 
 	input = input_allocate_device();
@@ -127,7 +160,10 @@ static int __init lbookv3_keys_init(void)
 
 	for (i = S3C2410_GPF0; i <= S3C2410_GPF2; i++) {
 		int irq = gpio_to_irq(i);
+
 		s3c2410_gpio_cfgpin(i, S3C2410_GPIO_SFN2);
+		s3c2410_gpio_pullup(i, 1);
+
 		line = &lines[i - S3C2410_GPF0];
 
 		set_irq_type(irq, IRQ_TYPE_EDGE_BOTH);
@@ -144,15 +180,31 @@ static int __init lbookv3_keys_init(void)
 				input_set_capability(input, EV_KEY, line->codes[j]);
 	}
 
+	input_set_capability(input, EV_KEY, KEY_POWER);
+
+	set_irq_type(IRQ_EINT6, IRQ_TYPE_EDGE_BOTH);
+	error = request_irq(IRQ_EINT6, lbookv3_powerkey_isr, IRQF_SAMPLE_RANDOM,
+			"lbookv3_keys", input);
+	if (error) {
+		printk(KERN_ERR "lbookv3-keys: unable to claim irq %d; error %d\n",
+				IRQ_EINT6, error);
+		goto fail;
+	}
+
+	s3c2410_gpio_cfgpin(S3C2410_GPF6, S3C2410_GPF6_EINT6);
+	s3c2410_gpio_pullup(S3C2410_GPF6, 1);
+
 	error = input_register_device(input);
 	if (error) {
 		printk(KERN_ERR "Unable to register lbookv3-keys input device\n");
-		goto fail;
+		goto fail1;
 	}
 
 	return 0;
 
- fail:
+fail1:
+	free_irq(IRQ_EINT6, input);
+fail:
 	for (i = i - 1; i >= S3C2410_GPF0; i--)
 		free_irq(gpio_to_irq(i), input);
 
@@ -165,8 +217,11 @@ static void __exit lbookv3_keys_exit(void)
 {
 	int i;
 
+	free_irq(IRQ_EINT6, input);
+
 	for (i = S3C2410_GPF0; i <= S3C2410_GPF2; i++) {
 		int irq = gpio_to_irq(i);
+
 		free_irq(irq, input);
 	}
 
