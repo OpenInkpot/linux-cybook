@@ -120,11 +120,6 @@ static irqreturn_t lbookv3_keys_isr(int irq, void *dev_id)
 				gpio_set_value(pullups[j], 0);
 
 		udelay(10);
-
-		for (j = 0; j < ARRAY_SIZE(pullups); j++)
-			printk("%d ", gpio_get_value(pullups[j]));
-
-		printk("\n");
 	}
 
 	for (i = S3C2410_GPF0; i <= S3C2410_GPF2; i++)
