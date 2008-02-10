@@ -154,21 +154,7 @@ static int __init lbookv3_keys_init(void)
 	input->id.version = 0x0100;
 
 	for (i = S3C2410_GPF0; i <= S3C2410_GPF2; i++) {
-		int irq = gpio_to_irq(i);
-
-		s3c2410_gpio_cfgpin(i, S3C2410_GPIO_SFN2);
-		s3c2410_gpio_pullup(i, 1);
-
 		line = &lines[i - S3C2410_GPF0];
-
-		set_irq_type(irq, IRQ_TYPE_EDGE_BOTH);
-		error = request_irq(irq, lbookv3_keys_isr, IRQF_SAMPLE_RANDOM,
-				    "lbookv3_keys", input);
-		if (error) {
-			printk(KERN_ERR "lbookv3-keys: unable to claim irq %d; error %d\n",
-				irq, error);
-			goto fail;
-		}
 
 		for (j = 0; j < 7; j++)
 			if (line->codes[j] != KEY_RESERVED)
@@ -177,33 +163,53 @@ static int __init lbookv3_keys_init(void)
 
 	input_set_capability(input, EV_KEY, KEY_POWER);
 
-	set_irq_type(IRQ_EINT6, IRQ_TYPE_EDGE_BOTH);
-	error = request_irq(IRQ_EINT6, lbookv3_powerkey_isr, IRQF_SAMPLE_RANDOM,
-			"lbookv3_keys", input);
-	if (error) {
-		printk(KERN_ERR "lbookv3-keys: unable to claim irq %d; error %d\n",
-				IRQ_EINT6, error);
-		goto fail;
-	}
-
-	s3c2410_gpio_cfgpin(S3C2410_GPF6, S3C2410_GPF6_EINT6);
-	s3c2410_gpio_pullup(S3C2410_GPF6, 1);
-
 	error = input_register_device(input);
 	if (error) {
 		printk(KERN_ERR "Unable to register lbookv3-keys input device\n");
 		goto fail1;
 	}
 
+	lbookv3_powerkey_isr(0, input);
+	lbookv3_keys_isr(0, input);
+
+	for (i = S3C2410_GPF0; i <= S3C2410_GPF2; i++) {
+		int irq = gpio_to_irq(i);
+
+		s3c2410_gpio_cfgpin(i, S3C2410_GPIO_SFN2);
+		s3c2410_gpio_pullup(i, 1);
+
+		set_irq_type(irq, IRQ_TYPE_EDGE_BOTH);
+		error = request_irq(irq, lbookv3_keys_isr, IRQF_SAMPLE_RANDOM,
+				    "lbookv3_keys", input);
+		if (error) {
+			printk(KERN_ERR "lbookv3-keys: unable to claim irq %d; error %d\n",
+				irq, error);
+			goto fail_reg_irqs;
+		}
+	}
+
+	set_irq_type(IRQ_EINT6, IRQ_TYPE_EDGE_BOTH);
+	error = request_irq(IRQ_EINT6, lbookv3_powerkey_isr, IRQF_SAMPLE_RANDOM,
+			"lbookv3_keys", input);
+	if (error) {
+		printk(KERN_ERR "lbookv3-keys: unable to claim irq %d; error %d\n",
+				IRQ_EINT6, error);
+		goto fail_reg_eint6;
+	}
+
+	s3c2410_gpio_cfgpin(S3C2410_GPF6, S3C2410_GPF6_EINT6);
+	s3c2410_gpio_pullup(S3C2410_GPF6, 1);
+
 	return 0;
 
-fail1:
 	free_irq(IRQ_EINT6, input);
-fail:
+fail_reg_irqs:
+fail_reg_eint6:
 	for (i = i - 1; i >= S3C2410_GPF0; i--)
 		free_irq(gpio_to_irq(i), input);
 
 	input_free_device(input);
+fail1:
 
 	return error;
 }
