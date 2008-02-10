@@ -318,6 +318,16 @@ static void lbookv3fb_apollo_update_part(struct lbookv3fb_par *par,
 	debug("called %p\n", par);
 	debug("x1 = %d, y1 = %d, x2 = %d, y2 = %d, y2 * 600 + x2 = %d\n", x1, y1, x2, y2, y2 * 600 + x2);
 
+	y1 -= y1 % 4;
+
+	if ((y2 + 1) % 4)
+		y2 += 4 - ((y2 + 1) % 4);
+
+	x1 -= x1 % 4;
+
+	if ((x2 + 1) % 4)
+		x2 += 4 - ((x2 + 1) % 4);
+
 	mutex_lock(&par->lock);
 
 	if (par->options.manual_refresh)
@@ -673,8 +683,43 @@ static ssize_t lbookv3fb_partial_update_store(struct device *dev, struct device_
 	return ret;
 }
 
+static ssize_t lbookv3fb_defio_delay_show(struct device *dev, struct device_attribute *attr, char *buf)
+{
+	struct fb_info *info = dev_get_drvdata(dev);
+	struct lbookv3fb_par *par = info->par;
+
+	sprintf(buf, "%lu\n", info->fbdefio->delay * 1000 / HZ);
+	return strlen(buf) + 1;
+}
+
+static ssize_t lbookv3fb_defio_delay_store(struct device *dev, struct device_attribute *attr, const char *buf, size_t size)
+{
+	struct fb_info *info = dev_get_drvdata(dev);
+	struct lbookv3fb_par *par = info->par;
+	char *after;
+	unsigned long state = simple_strtoul(buf, &after, 10);
+	size_t count = after - buf;
+	ssize_t ret = -EINVAL;
+
+	if (*after && isspace(*after))
+		count++;
+
+	state = state * HZ / 1000;
+
+	if (!state)
+		state = 1;
+
+	if (count == size) {
+		ret = count;
+		info->fbdefio->delay = state;
+	}
+
+	return ret;
+}
+
 DEVICE_ATTR(manual_refresh, 0666, lbookv3fb_manual_refresh_show, lbookv3fb_manual_refresh_store);
 DEVICE_ATTR(partial_update, 0666, lbookv3fb_partial_update_show, lbookv3fb_partial_update_store);
+DEVICE_ATTR(defio_delay, 0666, lbookv3fb_defio_delay_show, lbookv3fb_defio_delay_store);
 
 static struct file_operations lbookv3fb_wf_fops = {
 	.owner = THIS_MODULE,
@@ -696,7 +741,7 @@ static struct fb_ops lbookv3fb_ops = {
 };
 
 static struct fb_deferred_io lbookv3fb_defio = {
-	.delay		= HZ,
+	.delay		= HZ / 2,
 	.deferred_io	= lbookv3fb_dpy_deferred_io,
 };
 
@@ -765,7 +810,7 @@ static int __devinit lbookv3fb_probe(struct platform_device *dev)
 	mutex_init(&par->lock);
 	INIT_DELAYED_WORK(&par->deferred_work, lbookv3fb_deferred_work);
 	par->options.manual_refresh = 0;
-	par->options.partial_update = 0;
+	par->options.partial_update = 1;
 
 	info->flags = FBINFO_FLAG_DEFAULT;
 
@@ -807,10 +852,15 @@ static int __devinit lbookv3fb_probe(struct platform_device *dev)
 	if(retval)
 		goto err_devattr_partupd;
 
+	retval = device_create_file(info->dev, &dev_attr_defio_delay);
+	if(retval)
+		goto err_devattr_defio_delay;
 
 	return 0;
 
 
+	device_remove_file(info->dev, &dev_attr_defio_delay);
+err_devattr_defio_delay:
 	device_remove_file(info->dev, &dev_attr_partial_update);
 err_devattr_partupd:
 	device_remove_file(info->dev, &dev_attr_manual_refresh);
@@ -837,9 +887,10 @@ static int __devexit lbookv3fb_remove(struct platform_device *dev)
 		cancel_delayed_work(&par->deferred_work);
 		flush_scheduled_work();
 
-		device_remove_file(info->dev, &dev_attr_temperature);
 		device_remove_file(info->dev, &dev_attr_manual_refresh);
 		device_remove_file(info->dev, &dev_attr_partial_update);
+		device_remove_file(info->dev, &dev_attr_defio_delay);
+		device_remove_file(info->dev, &dev_attr_temperature);
 		unregister_framebuffer(info);
 		vfree((void __force *)info->screen_base);
 		lbookv3fb_remove_chrdev(info->par);
