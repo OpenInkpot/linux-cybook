@@ -431,8 +431,8 @@ struct nand_chip {
 #ifdef CONFIG_MTD_NAND_DUMB_BADBLOCK_TRANSLATION
 	#define NAND_BB_MAP_SPARE_BLOCKS	64
 
-	int				bb_translation_table[NAND_BB_MAP_SPARE_BLOCKS];
-	int				bb_translation_table_size;
+	int	bb_translation_table[NAND_BB_MAP_SPARE_BLOCKS];
+	int	bb_translation_table_size;
 #endif
 
 	void		*priv;

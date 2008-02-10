@@ -1893,7 +1893,8 @@ static int s3c2410_udc_probe(struct platform_device *pdev)
 		udc->vbus = 1;
 	}
 
-	s3c2410_modify_misccr(S3C2410_MISCCR_USBHOST|S3C2410_MISCCR_USBSUSPND0|S3C2410_MISCCR_USBSUSPND1, 0);
+	s3c2410_modify_misccr(S3C2410_MISCCR_USBHOST|S3C2410_MISCCR_USBSUSPND0|
+				S3C2410_MISCCR_USBSUSPND1, 0);
 
 	if (s3c2410_udc_debugfs_root) {
 		udc->regs_info = debugfs_create_file("registers", S_IRUGO,

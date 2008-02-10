@@ -303,13 +303,16 @@ static int nand_translate_bad(struct nand_chip *chip, loff_t ofs)
 	if (chip->options & NAND_USE_DUMB_BB_TRANSLATION) {
 		for (i = 0; i < chip->bb_translation_table_size; i++) {
 			if (chip->bb_translation_table[i] == block) {
-				ofs_res = (i << chip->phys_erase_shift) + (ofs - (block << chip->phys_erase_shift));
-				DEBUG(MTD_DEBUG_LEVEL2, "Translate 0x%08x to 0x%08x\n", (unsigned int)ofs, (unsigned int)ofs_res);
+				ofs_res = (i << chip->phys_erase_shift) +
+					(ofs - (block << chip->phys_erase_shift));
+				DEBUG(MTD_DEBUG_LEVEL2, "Translate 0x%08x to 0x%08x\n",
+						(unsigned int)ofs, (unsigned int)ofs_res);
 				return ofs_res;
 			}
 		}
 	}
-	DEBUG(MTD_DEBUG_LEVEL1, "%s: block %x not found in table\n", __FUNCTION__, block);
+	DEBUG(MTD_DEBUG_LEVEL1, "%s: block %x not found in table\n",
+			__FUNCTION__, block);
 	return ofs;
 }
 #endif
@@ -437,7 +440,7 @@ static int nand_block_checkbad(struct mtd_info *mtd, loff_t ofs, int getchip,
 	/* Return info from the table */
 
 #ifdef CONFIG_MTD_NAND_DUMB_BADBLOCK_TRANSLATION
-	if (nand_isbad_bbt(mtd, ofs, allowbbt) && (nand_translate_bad(chip, ofs) == ofs) )
+	if (nand_isbad_bbt(mtd, ofs, allowbbt) && (nand_translate_bad(chip, ofs) == ofs))
 		return 1;
 	else
 		return 0;
@@ -518,9 +521,9 @@ static void nand_command(struct mtd_info *mtd, unsigned int command,
 	}
 	if (page_addr != -1) {
 #ifdef CONFIG_MTD_NAND_DUMB_BADBLOCK_TRANSLATION
-		if ((chip->options & NAND_USE_DUMB_BB_TRANSLATION) && nand_isbad_bbt(mtd, page_addr << chip->page_shift, 1)) {
+		if ((chip->options & NAND_USE_DUMB_BB_TRANSLATION) &&
+				nand_isbad_bbt(mtd, page_addr << chip->page_shift, 1))
 			page_addr = nand_translate_bad(chip, page_addr << chip->page_shift) >> chip->page_shift;
-		}
 #endif
 
 		chip->cmd_ctrl(mtd, page_addr, ctrl);

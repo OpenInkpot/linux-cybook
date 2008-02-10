@@ -366,8 +366,8 @@ static void nand_bbt_add_to_translation_table(struct mtd_info *mtd, int block)
 	}
 /* FIXME: doesn't work correctly with many badblocks in spare area! */
 	/* Skip bads in spare area */
-	while (nand_isbad_bbt(mtd, this->bb_translation_table_size << this->phys_erase_shift, 1) && 
-			(this->bb_translation_table_size < NAND_BB_MAP_SPARE_BLOCKS) )
+	while (nand_isbad_bbt(mtd, this->bb_translation_table_size << this->phys_erase_shift, 1) &&
+			(this->bb_translation_table_size < NAND_BB_MAP_SPARE_BLOCKS))
 		this->bb_translation_table_size++;
 
 	if (this->bb_translation_table_size == NAND_BB_MAP_SPARE_BLOCKS) {
@@ -377,7 +377,8 @@ static void nand_bbt_add_to_translation_table(struct mtd_info *mtd, int block)
 
 	this->bb_translation_table[this->bb_translation_table_size] = block;
 	this->bb_translation_table_size++;
-	printk(KERN_INFO "Add translation of block 0x%x to block 0x%x\n", block, this->bb_translation_table_size);
+	printk(KERN_INFO "Add translation of block 0x%x to block 0x%x\n", block,
+			this->bb_translation_table_size);
 
 }
 #endif

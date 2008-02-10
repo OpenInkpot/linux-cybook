@@ -36,8 +36,11 @@
 #include <asm/hardware.h>
 #include <asm/io.h>
 
-//#define debug(fmt, args...) printk(KERN_INFO "%s: " fmt, __FUNCTION__, args) 
+#ifdef DEBUG
+#define debug(fmt, args...) printk(KERN_INFO "%s: " fmt, __FUNCTION__, args)
+#else
 #define debug(fmt, args...)
+#endif
 
 /* Apollo controller specific defines */
 #define APOLLO_WRITE_TO_FLASH		0x01
@@ -148,7 +151,8 @@ static void apollo_set_gpa_14_15(int val)
 
 
 
-static int __devinit apollo_setuphw(void) {
+static int __devinit apollo_setuphw(void)
+{
 	apollo_set_gpa_14_15(0);
 	s3c2410_gpio_cfgpin(S3C2410_GPD10, S3C2410_GPD10_OUTP);
 	s3c2410_gpio_cfgpin(S3C2410_GPD13, S3C2410_GPD13_OUTP);
@@ -182,7 +186,7 @@ static int __devinit apollo_setuphw(void) {
 
 static inline int apollo_wait_for_ack(void)
 {
-	int i=500000;
+	int i = 500000;
 
 	while (s3c2410_gpio_getpin(H_ACK)) {
 		if (!i) {
@@ -198,7 +202,7 @@ static inline int apollo_wait_for_ack(void)
 
 static inline int apollo_wait_for_ack_clear(void)
 {
-	int i=500000;
+	int i = 500000;
 
 	while (!s3c2410_gpio_getpin(H_ACK)) {
 		if (!i) {
@@ -294,7 +298,7 @@ static void lbookv3fb_dpy_update(struct lbookv3fb_par *par)
 
 	apollo_send_command(APOLLO_LOAD_PICTURE);
 
-	for (i=0; i < count; i += 4) {
+	for (i = 0; i < count; i += 4) {
 		tmp = pack_4pixels(buf[i], buf[i+1], buf[i+2], buf[i+3]);
 		apollo_send_data(tmp);
 	}
@@ -308,8 +312,9 @@ static void lbookv3fb_dpy_update(struct lbookv3fb_par *par)
 /*
  * x1 must be less than x2, y1 < y2
  */
-static void lbookv3fb_apollo_update_part(struct lbookv3fb_par *par, 
-		unsigned int x1, unsigned int y1, unsigned int x2, unsigned int y2)
+static void lbookv3fb_apollo_update_part(struct lbookv3fb_par *par,
+		unsigned int x1, unsigned int y1,
+		unsigned int x2, unsigned int y2)
 {
 	int i, j, k;
 	unsigned char *buf = (unsigned char __force *)par->info->screen_base;
@@ -370,7 +375,7 @@ static void lbookv3fb_dpy_deferred_io(struct fb_info *info,
 				struct list_head *pagelist)
 {
 
-	int y1=0, y2=0;
+	int y1 = 0, y2 = 0;
 	struct page *cur;
 	int prev_index = -1;
 	struct lbookv3fb_par *par = info->par;
@@ -401,7 +406,9 @@ static void lbookv3fb_dpy_deferred_io(struct fb_info *info,
 				continue;
 			}
 
-			lbookv3fb_apollo_update_part(info->par, 0, y1, DPY_W - 1, y2);
+			lbookv3fb_apollo_update_part(info->par, 0, y1,
+							DPY_W - 1, y2);
+
 			y1 = cur->index * PAGE_SIZE / DPY_W;
 			y2 = ((cur->index + 1) * PAGE_SIZE - 1) / DPY_W;
 			if (y2 >= DPY_H)
@@ -475,7 +482,7 @@ static ssize_t lbookv3fb_write(struct fb_info *info, const char __user *buf,
 				size_t count, loff_t *ppos)
 {
 	unsigned long p;
-	int err=-EINVAL;
+	int err = -EINVAL;
 	struct lbookv3fb_par *par;
 	unsigned int xres;
 	unsigned int fbmemlength;
@@ -519,7 +526,8 @@ static int lbookv3fb_sync(struct fb_info *info)
 	return 0;
 }
 
-static ssize_t lbookv3fb_wf_read(struct file *f, char __user *buf, size_t count, loff_t *f_pos)
+static ssize_t lbookv3fb_wf_read(struct file *f, char __user *buf,
+				size_t count, loff_t *f_pos)
 {
 	unsigned char data;
 	char __user *p = buf;
@@ -545,9 +553,9 @@ static ssize_t lbookv3fb_wf_read(struct file *f, char __user *buf, size_t count,
 		data = apollo_read_data();
 		apollo_set_gpa_14_15(0);
 
-		if (copy_to_user(p, &data, 1)) {
+		if (copy_to_user(p, &data, 1))
 			return -EFAULT;
-		}
+
 		p++;
 	}
 
@@ -557,7 +565,8 @@ static ssize_t lbookv3fb_wf_read(struct file *f, char __user *buf, size_t count,
 	return count;
 }
 
-static ssize_t lbookv3fb_wf_write(struct file *f, const char __user *buf, size_t count, loff_t *f_pos)
+static ssize_t lbookv3fb_wf_write(struct file *f, const char __user *buf,
+				size_t count, loff_t *f_pos)
 {
 	unsigned char data;
 	const char __user *p = buf;
@@ -579,9 +588,8 @@ static ssize_t lbookv3fb_wf_write(struct file *f, const char __user *buf, size_t
 		apollo_send_data((i >> 8) & 0xff);
 		apollo_send_data(i & 0xff);
 
-		if (copy_to_user(&data, p, 1)) {
+		if (copy_to_user(&data, p, 1))
 			return -EFAULT;
-		}
 
 		apollo_send_data(data);
 
@@ -605,7 +613,8 @@ static int lbookv3fb_wf_open(struct inode *i, struct file *f)
 	return 0;
 }
 
-static ssize_t lbookv3fb_temperature_show(struct device *dev, struct device_attribute *attr, char *buf)
+static ssize_t lbookv3fb_temperature_show(struct device *dev,
+		struct device_attribute *attr, char *buf)
 {
 	struct fb_info *info = dev_get_drvdata(dev);
 	struct lbookv3fb_par *par = info->par;
@@ -625,7 +634,8 @@ static ssize_t lbookv3fb_temperature_show(struct device *dev, struct device_attr
 	return strlen(buf) + 1;
 }
 
-static ssize_t lbookv3fb_manual_refresh_show(struct device *dev, struct device_attribute *attr, char *buf)
+static ssize_t lbookv3fb_manual_refresh_show(struct device *dev,
+		struct device_attribute *attr, char *buf)
 {
 	struct fb_info *info = dev_get_drvdata(dev);
 	struct lbookv3fb_par *par = info->par;
@@ -634,7 +644,8 @@ static ssize_t lbookv3fb_manual_refresh_show(struct device *dev, struct device_a
 	return strlen(buf) + 1;
 }
 
-static ssize_t lbookv3fb_manual_refresh_store(struct device *dev, struct device_attribute *attr, const char *buf, size_t size)
+static ssize_t lbookv3fb_manual_refresh_store(struct device *dev,
+		struct device_attribute *attr, const char *buf, size_t size)
 {
 	struct fb_info *info = dev_get_drvdata(dev);
 	struct lbookv3fb_par *par = info->par;
@@ -654,7 +665,8 @@ static ssize_t lbookv3fb_manual_refresh_store(struct device *dev, struct device_
 	return ret;
 }
 
-static ssize_t lbookv3fb_partial_update_show(struct device *dev, struct device_attribute *attr, char *buf)
+static ssize_t lbookv3fb_partial_update_show(struct device *dev,
+		struct device_attribute *attr, char *buf)
 {
 	struct fb_info *info = dev_get_drvdata(dev);
 	struct lbookv3fb_par *par = info->par;
@@ -663,7 +675,8 @@ static ssize_t lbookv3fb_partial_update_show(struct device *dev, struct device_a
 	return strlen(buf) + 1;
 }
 
-static ssize_t lbookv3fb_partial_update_store(struct device *dev, struct device_attribute *attr, const char *buf, size_t size)
+static ssize_t lbookv3fb_partial_update_store(struct device *dev,
+		struct device_attribute *attr, const char *buf, size_t size)
 {
 	struct fb_info *info = dev_get_drvdata(dev);
 	struct lbookv3fb_par *par = info->par;
@@ -683,7 +696,8 @@ static ssize_t lbookv3fb_partial_update_store(struct device *dev, struct device_
 	return ret;
 }
 
-static ssize_t lbookv3fb_defio_delay_show(struct device *dev, struct device_attribute *attr, char *buf)
+static ssize_t lbookv3fb_defio_delay_show(struct device *dev,
+		struct device_attribute *attr, char *buf)
 {
 	struct fb_info *info = dev_get_drvdata(dev);
 	struct lbookv3fb_par *par = info->par;
@@ -692,7 +706,8 @@ static ssize_t lbookv3fb_defio_delay_show(struct device *dev, struct device_attr
 	return strlen(buf) + 1;
 }
 
-static ssize_t lbookv3fb_defio_delay_store(struct device *dev, struct device_attribute *attr, const char *buf, size_t size)
+static ssize_t lbookv3fb_defio_delay_store(struct device *dev,
+		struct device_attribute *attr, const char *buf, size_t size)
 {
 	struct fb_info *info = dev_get_drvdata(dev);
 	struct lbookv3fb_par *par = info->par;
@@ -762,7 +777,7 @@ static int __devinit lbookv3fb_setup_chrdev(struct lbookv3fb_par *par)
 	cdev_init(cdev, &lbookv3fb_wf_fops);
 
 	res = cdev_add(cdev, devno, 1);
-	if(res)
+	if (res)
 		goto err_cdev_add;
 
 	return 0;
@@ -790,7 +805,8 @@ static int __devinit lbookv3fb_probe(struct platform_device *dev)
 
 	videomemorysize = (DPY_W*DPY_H)/8 * lbookv3fb_var.bits_per_pixel;
 
-	if (!(videomemory = vmalloc(videomemorysize)))
+	videomemory = vmalloc(videomemorysize);
+	if (!videomemory)
 		return retval;
 
 	memset(videomemory, 0xFF, videomemorysize);
@@ -837,23 +853,24 @@ static int __devinit lbookv3fb_probe(struct platform_device *dev)
 	       info->node, videomemorysize >> 10);
 
 
-	if ((retval = lbookv3fb_setup_chrdev(par)))
+	retval = lbookv3fb_setup_chrdev(par);
+	if (retval)
 		goto err2;
 
 	retval = device_create_file(info->dev, &dev_attr_temperature);
-	if(retval)
+	if (retval)
 		goto err_devattr_temperature;
 
 	retval = device_create_file(info->dev, &dev_attr_manual_refresh);
-	if(retval)
+	if (retval)
 		goto err_devattr_manref;
 
 	retval = device_create_file(info->dev, &dev_attr_partial_update);
-	if(retval)
+	if (retval)
 		goto err_devattr_partupd;
 
 	retval = device_create_file(info->dev, &dev_attr_defio_delay);
-	if(retval)
+	if (retval)
 		goto err_devattr_defio_delay;
 
 	return 0;

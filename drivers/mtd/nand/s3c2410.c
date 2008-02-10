@@ -68,7 +68,7 @@ static const int clock_stop = 0;
 static struct nand_ecclayout nand_hw_eccoob = {
 	.eccbytes = 3,
 	.eccpos = {2, 3, 4},
-	.oobfree = {{6, 10}}
+	.oobfree = { {6, 10} }
 };
 #else
 static struct nand_ecclayout nand_hw_eccoob = {

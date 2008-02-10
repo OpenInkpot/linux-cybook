@@ -158,7 +158,8 @@ static int __init lbookv3_keys_init(void)
 
 		for (j = 0; j < 7; j++)
 			if (line->codes[j] != KEY_RESERVED)
-				input_set_capability(input, EV_KEY, line->codes[j]);
+				input_set_capability(input, EV_KEY,
+						line->codes[j]);
 	}
 
 	input_set_capability(input, EV_KEY, KEY_POWER);
