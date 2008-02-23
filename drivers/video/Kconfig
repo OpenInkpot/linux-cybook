@@ -718,16 +718,22 @@ config FB_N411
          This enables support for the Apollo display controller in its
          Hecuba form using the n411 devkit.
 
-config FB_LBOOKV3
-       tristate "lBook/Jinke eReader V3 support"
-       depends on FB && ARCH_LBOOK_V3 && MMU
+config FB_EINK_APOLLO
+       tristate "Apollo eInk display controller support"
+       depends on EXPERIMENTAL && FB && MMU
        select FB_SYS_FILLRECT
        select FB_SYS_COPYAREA
        select FB_SYS_IMAGEBLIT
        select FB_SYS_FOPS
        select FB_DEFERRED_IO
        help
-         This enables support for the lBook/Jinke eReader V3.
+         This enables support for Apollo eInk display controller.
+	 Includes support of deferred IO and 2-bit grayscale mode.
+
+	 Hardware-specific functions have been moved to platform data.
+
+	 To compile this driver as a module, choose M here: the
+	 module will be called eink_apollofb.
 
 config FB_HGA
 	tristate "Hercules mono graphics support"

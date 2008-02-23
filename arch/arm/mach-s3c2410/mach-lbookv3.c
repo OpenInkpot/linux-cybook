@@ -44,6 +44,7 @@
 #include <linux/mtd/nand_ecc.h>
 #include <linux/mtd/partitions.h>
 #include <linux/mmc/host.h>
+#include <linux/eink_apollofb.h>
 
 #include <asm/mach/arch.h>
 #include <asm/mach/map.h>
@@ -66,6 +67,8 @@
 #include <asm/plat-s3c24xx/devs.h>
 #include <asm/plat-s3c24xx/cpu.h>
 #include <asm/plat-s3c24xx/udc.h>
+#include <asm/plat-s3c24xx/pm.h>
+
 
 #include <asm/plat-s3c24xx/common-smdk.h>
 
@@ -245,9 +248,124 @@ static struct s3c2410_udc_mach_info lbookv3_udc_platform_data = {
 	.vbus_pin	= S3C2410_GPF4,
 };
 
+const unsigned int apollo_pins[] = {S3C2410_GPD10, S3C2410_GPD12,
+	S3C2410_GPD13, S3C2410_GPD11, S3C2410_GPD14, S3C2410_GPD15};
+
+static int apollo_get_ctl_pin(unsigned int pin)
+{
+	return s3c2410_gpio_getpin(apollo_pins[pin]) ? 1 : 0;
+}
+
+static void apollo_set_gpa_14_15(int val)
+{
+	if (val != 1) {
+		s3c2410_gpio_cfgpin(S3C2410_GPA15, S3C2410_GPA15_OUT);
+		s3c2410_gpio_setpin(S3C2410_GPA15, 0);
+		s3c2410_gpio_cfgpin(S3C2410_GPA14, 0);
+		s3c2410_gpio_setpin(S3C2410_GPA14, 1);
+
+	} else {
+		s3c2410_gpio_cfgpin(S3C2410_GPA15, S3C2410_GPA15_OUT);
+		s3c2410_gpio_setpin(S3C2410_GPA15, 1);
+		s3c2410_gpio_cfgpin(S3C2410_GPA14, S3C2410_GPA14_OUT);
+		s3c2410_gpio_setpin(S3C2410_GPA14, 0);
+	}
+}
+
+static void apollo_set_ctl_pin(unsigned int pin, unsigned char val)
+{
+	s3c2410_gpio_setpin(apollo_pins[pin], val);
+}
+
+
+static void apollo_write_value(unsigned char val)
+{
+	writeb(val, 0xE8000000);
+}
+
+static unsigned char apollo_read_value(void)
+{
+	unsigned char res;
+
+	apollo_set_gpa_14_15(1);
+	res = readb(0xE8000000);
+	apollo_set_gpa_14_15(0);
+
+	return res;
+}
+
+static int apollo_setuphw(void)
+{
+	apollo_set_gpa_14_15(0);
+	s3c2410_gpio_cfgpin(S3C2410_GPD10, S3C2410_GPD10_OUTP);
+	s3c2410_gpio_cfgpin(S3C2410_GPD13, S3C2410_GPD13_OUTP);
+	s3c2410_gpio_cfgpin(S3C2410_GPD12, S3C2410_GPD12_OUTP);
+	s3c2410_gpio_cfgpin(S3C2410_GPD11, S3C2410_GPD11_INP);
+	s3c2410_gpio_cfgpin(S3C2410_GPD14, S3C2410_GPD14_OUTP);
+	s3c2410_gpio_cfgpin(S3C2410_GPD15, S3C2410_GPD15_OUTP);
+	s3c2410_gpio_cfgpin(S3C2410_GPE1, S3C2410_GPE1_OUTP);
+
+	s3c2410_gpio_setpin(S3C2410_GPD10, 0);
+	s3c2410_gpio_setpin(S3C2410_GPD13, 1);
+	s3c2410_gpio_setpin(S3C2410_GPD12, 0);
+	s3c2410_gpio_setpin(S3C2410_GPD14, 0);
+	s3c2410_gpio_setpin(S3C2410_GPD15, 1);
+	s3c2410_gpio_setpin(S3C2410_GPE1, 0);
+
+	s3c2410_gpio_cfgpin(S3C2410_GPD2, S3C2410_GPD2_OUTP);
+	s3c2410_gpio_setpin(S3C2410_GPD2, 1);
+
+	s3c2410_gpio_cfgpin(S3C2410_GPC13, S3C2410_GPC13_OUTP);
+	s3c2410_gpio_setpin(S3C2410_GPC13, 1);
+
+	s3c2410_gpio_setpin(S3C2410_GPD15, 0);
+	udelay(20);
+	s3c2410_gpio_setpin(S3C2410_GPD15, 1);
+	udelay(20);
+
+	apollo_set_ctl_pin(H_CD, 0);
+	return 0;
+}
+
+static void apollo_initialize(void)
+{
+	apollo_set_ctl_pin(H_RW, 0);
+	s3c2410_gpio_setpin(S3C2410_GPA14, 1);
+	s3c2410_gpio_setpin(S3C2410_GPA15, 0);
+	s3c2410_gpio_cfgpin(S3C2410_GPE1, S3C2410_GPE1_OUTP);
+	s3c2410_gpio_setpin(S3C2410_GPE1, 0);
+	s3c2410_gpio_cfgpin(S3C2410_GPC13, S3C2410_GPC13_OUTP);
+	s3c2410_gpio_setpin(S3C2410_GPC13, 1);
+}
+
+static int apollo_init(void)
+{
+	apollo_setuphw();
+	apollo_initialize();
+
+	return 0;
+}
+
+static struct eink_apollofb_platdata lbookv3_apollofb_platdata = {
+	.ops = {
+		.set_ctl_pin	= apollo_set_ctl_pin,
+		.get_ctl_pin	= apollo_get_ctl_pin,
+		.read_value	= apollo_read_value,
+		.write_value	= apollo_write_value,
+		.initialize = apollo_init,
+	},
+	.defio_delay = HZ / 2,
+};
+
+static struct platform_device lbookv3_apollo = {
+	.name		= "eink-apollo",
+	.id		= -1,
+	.dev		= {
+		.platform_data = &lbookv3_apollofb_platdata,
+	},
+};
+
 static struct platform_device *lbookv3_devices[] __initdata = {
-//	&s3c_device_usb,
-//	&s3c_device_lcd,
 	&s3c_device_wdt,
 	&s3c_device_i2c,
 	&s3c_device_iis,
@@ -261,7 +379,8 @@ static struct platform_device *lbookv3_devices[] __initdata = {
 	&s3c_device_sdi,
 	&lbookv3_led_red,
 	&lbookv3_led_green,
-	&lbookv3_device_nor
+	&lbookv3_device_nor,
+	&lbookv3_apollo,
 };
 
 static void lbookv3_power_off(void)
@@ -331,6 +450,7 @@ static void __init lbookv3_init(void)
 	platform_add_devices(lbookv3_devices, ARRAY_SIZE(lbookv3_devices));
 
 	pm_power_off = &lbookv3_power_off;
+	s3c2410_pm_init();
 }
 
 MACHINE_START(LBOOK_V3, "LBOOK_V3") /* @TODO: request a new identifier and switch
