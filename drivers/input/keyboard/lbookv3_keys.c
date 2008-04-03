@@ -187,6 +187,7 @@ static int __init lbookv3_keys_init(void)
 				irq, error);
 			goto fail_reg_irqs;
 		}
+		enable_irq_wake(irq);
 	}
 
 	set_irq_type(IRQ_EINT6, IRQ_TYPE_EDGE_BOTH);
@@ -197,6 +198,7 @@ static int __init lbookv3_keys_init(void)
 				IRQ_EINT6, error);
 		goto fail_reg_eint6;
 	}
+	enable_irq_wake(IRQ_EINT6);
 
 	s3c2410_gpio_cfgpin(S3C2410_GPF6, S3C2410_GPF6_EINT6);
 	s3c2410_gpio_pullup(S3C2410_GPF6, 1);
@@ -219,11 +221,13 @@ static void __exit lbookv3_keys_exit(void)
 {
 	int i;
 
+	disable_irq_wake(IRQ_EINT6);
 	free_irq(IRQ_EINT6, input);
 
 	for (i = S3C2410_GPF0; i <= S3C2410_GPF2; i++) {
 		int irq = gpio_to_irq(i);
 
+		disable_irq_wake(irq);
 		free_irq(irq, input);
 	}
 
