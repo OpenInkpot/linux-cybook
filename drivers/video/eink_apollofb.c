@@ -227,6 +227,8 @@ static void apollofb_apollo_update_part(struct apollofb_par *par,
 	unsigned char *buf = (unsigned char __force *)info->screen_base;
 	unsigned char tmp, mask;
 
+	printk(KERN_INFO "%s\n", __FUNCTION__);
+
 	y1 -= y1 % 4;
 
 	if ((y2 + 1) % 4)
@@ -276,6 +278,7 @@ static void apollofb_apollo_update_part(struct apollofb_par *par,
 		apollo_send_command(par, APOLLO_SLEEP_MODE);
 
 	mutex_unlock(&par->lock);
+	printk(KERN_INFO "%s finished\n", __FUNCTION__);
 }
 
 /* this is called back from the deferred io workqueue */
@@ -935,22 +938,30 @@ static int __devexit apollofb_remove(struct platform_device *dev)
 }
 
 #ifdef CONFIG_PM
+extern void pm_dbg(const char *fmt, ...);
 static int apollofb_suspend(struct platform_device *pdev, pm_message_t message)
 {
-	struct apollofb_par *par = platform_get_drvdata(pdev);
+	struct fb_info *info = platform_get_drvdata(pdev);
+	struct apollofb_par *par = info->par;
 
-	apollo_send_command(par, APOLLO_STANDBY_MODE);
+	mutex_lock(&par->lock);
+//	apollo_send_command(par, APOLLO_STANDBY_MODE);
+	mutex_unlock(&par->lock);
 
 	return 0;
 }
 
 static int apollofb_resume(struct platform_device *pdev)
 {
-	struct apollofb_par *par = platform_get_drvdata(pdev);
+	struct fb_info *info = platform_get_drvdata(pdev);
+	struct apollofb_par *par = info->par;
 
-	apollo_wakeup(par);
+	mutex_lock(&par->lock);
+//	apollo_wakeup(par);
 	if (!par->options.use_sleep_mode)
 		apollo_set_normal_mode(par);
+	printk(KERN_ERR "Apollo status is 0x%02x\n", apollo_get_status(par));
+	mutex_unlock(&par->lock);
 
 	return 0;
 }

@@ -77,6 +77,8 @@ static irqreturn_t lbookv3_keys_isr(int irq, void *dev_id)
 	struct gpio_line *line;
 	struct input_dev *input = dev_id;
 
+	printk(KERN_INFO "keypad interrupt %d\n", irq);
+
 	for (i = S3C2410_GPF0; i <= S3C2410_GPF2; i++)
 		s3c2410_gpio_cfgpin(i, S3C2410_GPIO_INPUT);
 
@@ -235,7 +237,28 @@ static void __exit lbookv3_keys_exit(void)
 
 	input_free_device(input);
 }
+/*
+#ifdef CONFIG_PM
+static lbookv3_keys_resume_early(struct platform_device *pdev)
+{
+	struct input_dev *input = platform_get_drvdata(pdev);
 
+
+}
+#endif
+
+static struct platform_driver lbookv3_keys_driver = {
+	.probe = lbookv3_keys_probe,
+	.remove = lbookv3_keys_remove,
+	.driver = {
+		.owner	= THIS_MODULE,
+		.name	= "lbookv3-keys",
+	},
+#ifdef CONFIG_PM
+	.resume_early	= lbookv3_keys_resume_early,
+#endif
+};
+*/
 module_init(lbookv3_keys_init);
 module_exit(lbookv3_keys_exit);
 

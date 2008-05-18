@@ -365,6 +365,11 @@ static struct platform_device lbookv3_apollo = {
 	},
 };
 
+static struct platform_device lbookv3_keys = {
+	.name		= "lbookv3-keys",
+	.id		= -1,
+};
+
 static struct platform_device *lbookv3_devices[] __initdata = {
 	&s3c_device_wdt,
 	&s3c_device_i2c,
@@ -381,6 +386,7 @@ static struct platform_device *lbookv3_devices[] __initdata = {
 	&lbookv3_led_green,
 	&lbookv3_device_nor,
 	&lbookv3_apollo,
+	&lbookv3_keys,
 };
 
 static void lbookv3_power_off(void)

@@ -24,6 +24,7 @@
 
 #include <mach/hardware.h>
 #include <mach/usb-control.h>
+#include <mach/regs-gpio.h>
 
 #define valid_port(idx) ((idx) == 1 || (idx) == 2)
 
@@ -349,6 +350,8 @@ static int usb_hcd_s3c2410_probe (const struct hc_driver *driver,
 
 	s3c2410_usb_set_power(dev->dev.platform_data, 1, 1);
 	s3c2410_usb_set_power(dev->dev.platform_data, 2, 1);
+
+	s3c2410_modify_misccr(S3C2410_MISCCR_USBHOST, S3C2410_MISCCR_USBHOST);
 
 	hcd = usb_create_hcd(driver, &dev->dev, "s3c24xx");
 	if (hcd == NULL)
