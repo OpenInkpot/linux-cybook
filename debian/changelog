@@ -1,0 +1,12 @@
+linux-2.6 (2.6.25-1) unstable; urgency=low
+
+  * New upstream release
+
+ -- Yauhen Kharuzhy <jekhor@gmail.com>  Thu, 22 May 2008 17:54:48 +0300
+
+linux-2.6 (2.6.24-1) unstable; urgency=low
+
+  * Initial release for OpenInkpot
+
+ -- Yauhen Kharuzhy <jekhor@gmail.com>  Sun, 18 May 2008 15:19:04 +0300
+

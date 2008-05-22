@@ -1,0 +1,19 @@
+This package was debianized by Yauhen Kharuzhy <jekhor@gmail.com> on
+Sun, 18 May 2008 15:19:04 +0300.
+
+It was downloaded from http://openinkpot.org
+
+Copyright: 
+
+    <Copyright (C) YYYY Name OfAuthor>
+    <likewise for another author>
+
+License:
+
+    <Put the license of the package here indented by 4 spaces>
+
+The Debian packaging is (C) 2008, Yauhen Kharuzhy <jekhor@gmail.com> and
+is licensed under the GPL, see `/usr/share/common-licenses/GPL'.
+
+# Please also look if there are files or directories which have a
+# different copyright/license attached and list them here.
