@@ -70,12 +70,12 @@ clean-files += $(objtree)/binkernel.spec
 
 # Deb target
 # ---------------------------------------------------------------------------
-deb-pkg: FORCE
-	$(MAKE) KBUILD_SRC=
-	$(CONFIG_SHELL) $(srctree)/scripts/package/builddeb
-
-clean-dirs += $(objtree)/debian/
-
+#deb-pkg: FORCE
+#	$(MAKE) KBUILD_SRC=
+#	$(CONFIG_SHELL) $(srctree)/scripts/package/builddeb
+#
+#clean-dirs += $(objtree)/debian/
+#
 
 # tarball targets
 # ---------------------------------------------------------------------------
