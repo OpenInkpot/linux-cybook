@@ -375,6 +375,7 @@ static struct platform_device *lbookv3_devices[] __initdata = {
 	&s3c_device_i2c,
 	&s3c_device_iis,
 	&s3c_device_usbgadget,
+	&s3c_device_usb,
 	&s3c_device_nand,
 	&s3c_device_rtc,
 	&s3c_device_adc,
@@ -447,7 +448,6 @@ static void __init lbookv3_init(void)
 		| (0x02 << S3C2410_PLLCON_PDIVSHIFT)
 		| (0x03 << S3C2410_PLLCON_SDIVSHIFT);
 	writel(tmp, S3C2410_UPLLCON);
-
 
 	s3c_device_nand.dev.platform_data = &lbookv3_nand_info;
 	s3c_device_sdi.dev.platform_data = &lbookv3_mmc_cfg;
