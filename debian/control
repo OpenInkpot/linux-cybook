@@ -3,6 +3,7 @@ Section: core
 Priority: extra
 Maintainer: Yauhen Kharuzhy <jekhor@gmail.com>
 Build-Depends: debhelper (>= 5), dpatch, module-init-tools
+XCS-Cross-Host-Build-Depends: debhelper (>= 5), dpatch, module-init-tools
 Standards-Version: 3.7.3
 
 Package: linux-image-2.6.25-v3-armel
