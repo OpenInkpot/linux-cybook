@@ -118,7 +118,10 @@ static int lbookv3_battery_get_status(struct power_supply *b)
 	if (lbookv3_battery_charging())
 		return POWER_SUPPLY_STATUS_CHARGING;
 	else
-		return POWER_SUPPLY_STATUS_NOT_CHARGING;
+		if (lbookv3_usb_connected())
+			return POWER_SUPPLY_STATUS_NOT_CHARGING;
+		else
+			return POWER_SUPPLY_STATUS_DISCHARGING;
 }
 
 static enum power_supply_property lbookv3_battery_props[] = 
