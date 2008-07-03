@@ -62,4 +62,10 @@ config BATTERY_PALMTX
 	help
 	  Say Y to enable support for the battery in Palm T|X.
 
+config BATTERY_LBOOKV3
+	tristate "HanLin/lBook eReader V3 battery"
+	depends on ARCH_LBOOK_V3
+	help
+	  Say Y to enable support for the battery in HanLin/lBook eReader V3.
+
 endif # POWER_SUPPLY
