@@ -15,3 +15,16 @@ Package: linux-modules-2.6.25-v3
 Architecture: armel
 Description: Linux kernel modules for Hanlin/lBook eReader V3
  Hanlin/lBook eReader V3 linux kernel modules.
+
+Package: linux-image-2.6.25-nfsroot-v3-armel
+Architecture: all
+Description: Linux kernel image for Hanlin/lBook eReader V3
+ Hanlin/lBook eReader V3 linux kernel image for armel architecture.
+ Nfsroot version.
+
+Package: linux-modules-2.6.25-nfsroot-v3
+Architecture: armel
+Description: Linux kernel modules for Hanlin/lBook eReader V3
+ Hanlin/lBook eReader V3 linux kernel modules.
+ Nfsroot version.
+

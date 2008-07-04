@@ -42,10 +42,15 @@ build: build-arch build-indep
 
 build-arch: build-arch-stamp
 build-arch-stamp: configure-stamp  
-
-	# Add here commands to compile the arch part of the package.
+	mkdir -p build-v3-armel
 	cp $(CURDIR)/debian/config-v3-armel $(CURDIR)/.config
-	$(MAKE) EXTRAVERSION=-v3-$(DEB_HOST_ARCH) ARCH=arm CROSS_COMPILE=$(DEB_HOST_GNU_TYPE)- oldconfig zImage modules
+	$(MAKE) EXTRAVERSION=-v3-$(DEB_HOST_ARCH) ARCH=arm CROSS_COMPILE=$(DEB_HOST_GNU_TYPE)- INSTALL_MOD_PATH=build-v3-armel/ oldconfig zImage modules modules_install
+	cp $(CURDIR)/arch/arm/boot/zImage $(CURDIR)/.config $(CURDIR)/System.map $(CURDIR)/build-v3-armel/
+	mkdir -p build-nfsroot-v3-armel
+	cp $(CURDIR)/debian/config-nfsroot-v3-armel $(CURDIR)/.config
+	$(MAKE) EXTRAVERSION=-v3-$(DEB_HOST_ARCH) ARCH=arm CROSS_COMPILE=$(DEB_HOST_GNU_TYPE)- INSTALL_MOD_PATH=build-nfsroot-v3-armel/ oldconfig zImage modules modules_install
+	cp $(CURDIR)/arch/arm/boot/zImage $(CURDIR)/.config $(CURDIR)/System.map $(CURDIR)/build-nfsroot-v3-armel/
+
 	touch $@
 
 build-indep: build-indep-stamp
@@ -69,9 +74,14 @@ install-indep:
 	dh_installdirs -i
 	dh_install -i
 	mkdir -p $(CURDIR)/debian/linux-image-$(LINUX_VERSION)-v3-$(DEB_HOST_ARCH)/boot
-	install -m 0644 arch/arm/boot/zImage $(CURDIR)/debian/linux-image-$(LINUX_VERSION)-v3-$(DEB_HOST_ARCH)/boot/vmlinuz-$(LINUX_VERSION)-v3-$(DEB_HOST_ARCH)
-	install -m 0644 System.map $(CURDIR)/debian/linux-image-$(LINUX_VERSION)-v3-$(DEB_HOST_ARCH)/boot/System.map-$(LINUX_VERSION)-v3-$(DEB_HOST_ARCH)
-	install -m 0644 .config $(CURDIR)/debian/linux-image-$(LINUX_VERSION)-v3-$(DEB_HOST_ARCH)/boot/config-$(LINUX_VERSION)-v3-$(DEB_HOST_ARCH)
+	install -m 0644 $(CURDIR)/build-v3-armel/zImage $(CURDIR)/debian/linux-image-$(LINUX_VERSION)-v3-$(DEB_HOST_ARCH)/boot/vmlinuz-$(LINUX_VERSION)-v3-$(DEB_HOST_ARCH)
+	install -m 0644 $(CURDIR)/build-v3-armel/System.map $(CURDIR)/debian/linux-image-$(LINUX_VERSION)-v3-$(DEB_HOST_ARCH)/boot/System.map-$(LINUX_VERSION)-v3-$(DEB_HOST_ARCH)
+	install -m 0644 $(CURDIR)/build-v3-armel/.config $(CURDIR)/debian/linux-image-$(LINUX_VERSION)-v3-$(DEB_HOST_ARCH)/boot/config-$(LINUX_VERSION)-v3-$(DEB_HOST_ARCH)
+	mkdir -p $(CURDIR)/debian/linux-image-$(LINUX_VERSION)-nfsroot-v3-$(DEB_HOST_ARCH)/boot
+	install -m 0644 $(CURDIR)/build-nfsroot-v3-armel/zImage $(CURDIR)/debian/linux-image-$(LINUX_VERSION)-nfsroot-v3-$(DEB_HOST_ARCH)/boot/vmlinuz-$(LINUX_VERSION)-v3-$(DEB_HOST_ARCH)
+	install -m 0644 $(CURDIR)/build-nfsroot-v3-armel/System.map $(CURDIR)/debian/linux-image-$(LINUX_VERSION)-nfsroot-v3-$(DEB_HOST_ARCH)/boot/System.map-$(LINUX_VERSION)-v3-$(DEB_HOST_ARCH)
+	install -m 0644 $(CURDIR)/build-nfsroot-v3-armel/.config $(CURDIR)/debian/linux-image-$(LINUX_VERSION)-nfsroot-v3-$(DEB_HOST_ARCH)/boot/config-$(LINUX_VERSION)-v3-$(DEB_HOST_ARCH)
+
 
 
 install-arch:
@@ -80,7 +90,10 @@ install-arch:
 	dh_clean -k -s 
 	dh_installdirs -s
 	mkdir -p $(CURDIR)/debian/linux-modules-$(LINUX_VERSION)-v3/
-	$(MAKE) EXTRAVERSION=-v3-$(DEB_HOST_ARCH) ARCH=arm INSTALL_MOD_PATH=$(CURDIR)/debian/linux-modules-$(LINUX_VERSION)-v3/ modules_install
+	mkdir -p $(CURDIR)/debian/linux-modules-$(LINUX_VERSION)-nfsroot-v3/
+#	$(MAKE) EXTRAVERSION=-v3-$(DEB_HOST_ARCH) ARCH=arm INSTALL_MOD_PATH=$(CURDIR)/debian/linux-modules-$(LINUX_VERSION)-v3/ modules_install
+	cp -r $(CURDIR)/build-v3-armel/lib $(CURDIR)/debian/linux-modules-$(LINUX_VERSION)-v3/
+	cp -r $(CURDIR)/build-nfsroot-v3-armel/lib $(CURDIR)/debian/linux-modules-$(LINUX_VERSION)-nfsroot-v3/
 	dh_install -s
 
 # Must not depend on anything. This is to be called by
