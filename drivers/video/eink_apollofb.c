@@ -55,6 +55,7 @@ struct apollofb_par {
 	struct delayed_work deferred_work;
 	struct cdev cdev;
 	struct apollofb_options options;
+	int current_mode;
 	struct eink_apollo_operations *ops;
 	int standby;
 };
@@ -143,7 +144,13 @@ static unsigned char apollo_get_status(struct apollofb_par *par)
 	return res;
 }
 
-static int apollo_set_normal_mode(struct apollofb_par *par)
+static void apollo_set_sleep_mode(struct apollofb_par *par)
+{
+	apollo_send_command(par, APOLLO_SLEEP_MODE);
+	par->current_mode = APOLLO_STATUS_MODE_SLEEP;
+}
+
+static void apollo_set_normal_mode(struct apollofb_par *par)
 {
 	par->ops->set_ctl_pin(H_CD, 0);
 	par->ops->set_ctl_pin(H_RW, 0);
@@ -151,7 +158,8 @@ static int apollo_set_normal_mode(struct apollofb_par *par)
 	apollo_send_command(par, APOLLO_NORMAL_MODE);
 	apollo_send_command(par, APOLLO_ORIENTATION);
 	apollo_send_data(par, ((par->info->var.rotate + 90) % 360) / 90);
-	return 0;
+
+	par->current_mode = APOLLO_STATUS_MODE_NORMAL;
 }
 
 static void apollo_wakeup(struct apollofb_par *par)
@@ -161,6 +169,7 @@ static void apollo_wakeup(struct apollofb_par *par)
 	udelay(100);
 	par->ops->set_ctl_pin(H_DS, 0);
 	apollo_wait_for_ack(par);
+	par->ops->set_ctl_pin(H_WUP, 0);
 	par->ops->set_ctl_pin(H_DS, 1);
 	apollo_wait_for_ack_clear(par);
 }
@@ -185,7 +194,7 @@ static void apollofb_dpy_update(struct apollofb_par *par)
 
 	mutex_lock(&par->lock);
 
-	if (par->options.use_sleep_mode)
+	if (par->current_mode == APOLLO_STATUS_MODE_SLEEP)
 		apollo_set_normal_mode(par);
 
 	if (par->options.manual_refresh)
@@ -206,7 +215,7 @@ static void apollofb_dpy_update(struct apollofb_par *par)
 	apollo_send_command(par, APOLLO_DISPLAY_PICTURE);
 
 	if (par->options.use_sleep_mode)
-		apollo_send_command(par, APOLLO_SLEEP_MODE);
+		apollo_set_sleep_mode(par);
 
 	mutex_unlock(&par->lock);
 }
@@ -243,7 +252,7 @@ static void apollofb_apollo_update_part(struct apollofb_par *par,
 
 	mutex_lock(&par->lock);
 
-	if (par->options.use_sleep_mode)
+	if (par->current_mode == APOLLO_STATUS_MODE_SLEEP)
 		apollo_set_normal_mode(par);
 
 	if (par->options.manual_refresh)
@@ -273,7 +282,7 @@ static void apollofb_apollo_update_part(struct apollofb_par *par,
 	apollo_send_command(par, APOLLO_DISPLAY_PARTIAL_PICTURE);
 
 	if (par->options.use_sleep_mode)
-		apollo_send_command(par, APOLLO_SLEEP_MODE);
+		apollo_set_sleep_mode(par);
 
 	mutex_unlock(&par->lock);
 }
@@ -492,7 +501,7 @@ static ssize_t apollofb_wf_read(struct file *f, char __user *buf,
 	struct apollofb_par *par = f->private_data;
 
 	mutex_lock(&par->lock);
-	if (par->options.use_sleep_mode)
+	if (par->current_mode == APOLLO_STATUS_MODE_SLEEP)
 		apollo_set_normal_mode(par);
 
 	if (*f_pos > APOLLO_WAVEFORMS_FLASH_SIZE - 1)
@@ -517,7 +526,7 @@ static ssize_t apollofb_wf_read(struct file *f, char __user *buf,
 	}
 
 	if (par->options.use_sleep_mode)
-		apollo_send_command(par, APOLLO_SLEEP_MODE);
+		apollo_set_sleep_mode(par);
 	mutex_unlock(&par->lock);
 
 	*f_pos += count;
@@ -534,7 +543,7 @@ static ssize_t apollofb_wf_write(struct file *f, const char __user *buf,
 
 	mutex_lock(&par->lock);
 
-	if (par->options.use_sleep_mode)
+	if (par->current_mode == APOLLO_STATUS_MODE_SLEEP)
 		apollo_set_normal_mode(par);
 
 	if (*f_pos > APOLLO_WAVEFORMS_FLASH_SIZE - 1)
@@ -558,7 +567,7 @@ static ssize_t apollofb_wf_write(struct file *f, const char __user *buf,
 	}
 
 	if (par->options.use_sleep_mode)
-		apollo_send_command(par, APOLLO_SLEEP_MODE);
+		apollo_set_sleep_mode(par);
 	mutex_unlock(&par->lock);
 
 	*f_pos += count;
@@ -652,6 +661,16 @@ static ssize_t apollofb_use_sleep_mode_store(struct device *dev,
 	if ((count == size) && (state <= 1)) {
 		ret = count;
 		par->options.use_sleep_mode = state;
+
+		mutex_lock(&par->lock);
+
+		if (state)
+			apollo_set_sleep_mode(par);
+		else
+			apollo_set_normal_mode(par);
+
+		mutex_unlock(&par->lock);
+
 	}
 
 	return ret;
@@ -873,7 +892,7 @@ static int __devinit apollofb_probe(struct platform_device *dev)
 	apollo_send_command(par, APOLLO_ERASE_DISPLAY);
 	apollo_send_data(par, 0x01);
 	if (par->options.use_sleep_mode)
-		apollo_send_command(par, APOLLO_SLEEP_MODE);
+		apollo_set_sleep_mode(par);
 	mutex_unlock(&par->lock);
 
 	retval = register_framebuffer(info);
@@ -977,7 +996,7 @@ static int apollofb_resume(struct platform_device *pdev)
 
 	mutex_lock(&par->lock);
 	apollo_wakeup(par);
-	if (!par->options.use_sleep_mode)
+	if (par->current_mode == APOLLO_STATUS_MODE_SLEEP)
 		apollo_set_normal_mode(par);
 	mutex_unlock(&par->lock);
 

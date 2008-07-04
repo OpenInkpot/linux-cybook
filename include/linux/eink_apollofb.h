@@ -49,6 +49,10 @@ struct eink_apollo_operations {
 
 #define APOLLO_WAVEFORMS_FLASH_SIZE	(1024 * 1024 * 2)
 
+#define APOLLO_STATUS_MODE_MASK		(1 << 0)
+#define APOLLO_STATUS_MODE_SLEEP	0x01
+#define APOLLO_STATUS_MODE_NORMAL	0x00
+
 struct eink_apollofb_platdata {
 	struct eink_apollo_operations ops;
 	unsigned long defio_delay;
