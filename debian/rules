@@ -44,11 +44,13 @@ build-arch: build-arch-stamp
 build-arch-stamp: configure-stamp  
 	mkdir -p build-v3-armel
 	cp $(CURDIR)/debian/config-v3-armel $(CURDIR)/.config
-	$(MAKE) EXTRAVERSION=-v3-$(DEB_HOST_ARCH) ARCH=arm CROSS_COMPILE=$(DEB_HOST_GNU_TYPE)- INSTALL_MOD_PATH=build-v3-armel/ oldconfig zImage modules modules_install
+	$(MAKE) EXTRAVERSION=-v3-$(DEB_HOST_ARCH) ARCH=arm CROSS_COMPILE=$(DEB_HOST_GNU_TYPE)- INSTALL_MOD_PATH=build-v3-armel/ oldconfig
+	$(MAKE) EXTRAVERSION=-v3-$(DEB_HOST_ARCH) ARCH=arm CROSS_COMPILE=$(DEB_HOST_GNU_TYPE)- INSTALL_MOD_PATH=build-v3-armel/ zImage modules modules_install
 	cp $(CURDIR)/arch/arm/boot/zImage $(CURDIR)/.config $(CURDIR)/System.map $(CURDIR)/build-v3-armel/
 	mkdir -p build-nfsroot-v3-armel
 	cp $(CURDIR)/debian/config-nfsroot-v3-armel $(CURDIR)/.config
-	$(MAKE) EXTRAVERSION=-v3-$(DEB_HOST_ARCH) ARCH=arm CROSS_COMPILE=$(DEB_HOST_GNU_TYPE)- INSTALL_MOD_PATH=build-nfsroot-v3-armel/ oldconfig zImage modules modules_install
+	$(MAKE) EXTRAVERSION=-nfsroot-v3-$(DEB_HOST_ARCH) ARCH=arm CROSS_COMPILE=$(DEB_HOST_GNU_TYPE)- INSTALL_MOD_PATH=build-nfsroot-v3-armel/ oldconfig
+	$(MAKE) EXTRAVERSION=-nfsroot-v3-$(DEB_HOST_ARCH) ARCH=arm CROSS_COMPILE=$(DEB_HOST_GNU_TYPE)- INSTALL_MOD_PATH=build-nfsroot-v3-armel/ zImage modules modules_install
 	cp $(CURDIR)/arch/arm/boot/zImage $(CURDIR)/.config $(CURDIR)/System.map $(CURDIR)/build-nfsroot-v3-armel/
 
 	touch $@
