@@ -1,3 +1,10 @@
+linux-2.6 (2.6.25-3) unstable; urgency=low
+
+  * Apollo sleep & resume work now.
+  * Debug in keypad code has been removed.
+
+ -- Yauhen Kharuzhy <jekhor@gmail.com>  Fri, 04 Jul 2008 21:39:04 +0300
+
 linux-2.6 (2.6.25-2) unstable; urgency=low
 
   * Fix palette inversion in eink_apollofb driver
