@@ -77,8 +77,6 @@ static irqreturn_t lbookv3_keys_isr(int irq, void *dev_id)
 	struct gpio_line *line;
 	struct input_dev *input = dev_id;
 
-	printk(KERN_INFO "keypad interrupt %d\n", irq);
-
 	for (i = S3C2410_GPF0; i <= S3C2410_GPF2; i++)
 		s3c2410_gpio_cfgpin(i, S3C2410_GPIO_INPUT);
 
