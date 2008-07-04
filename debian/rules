@@ -82,9 +82,9 @@ install-indep:
 	install -m 0644 $(CURDIR)/build-v3-armel/System.map $(CURDIR)/debian/linux-image-$(LINUX_VERSION)-v3-$(DEB_HOST_ARCH)/boot/System.map-$(LINUX_VERSION)-v3-$(DEB_HOST_ARCH)
 	install -m 0644 $(CURDIR)/build-v3-armel/.config $(CURDIR)/debian/linux-image-$(LINUX_VERSION)-v3-$(DEB_HOST_ARCH)/boot/config-$(LINUX_VERSION)-v3-$(DEB_HOST_ARCH)
 	mkdir -p $(CURDIR)/debian/linux-image-$(LINUX_VERSION)-nfsroot-v3-$(DEB_HOST_ARCH)/boot
-	install -m 0644 $(CURDIR)/build-nfsroot-v3-armel/zImage $(CURDIR)/debian/linux-image-$(LINUX_VERSION)-nfsroot-v3-$(DEB_HOST_ARCH)/boot/vmlinuz-$(LINUX_VERSION)-v3-$(DEB_HOST_ARCH)
-	install -m 0644 $(CURDIR)/build-nfsroot-v3-armel/System.map $(CURDIR)/debian/linux-image-$(LINUX_VERSION)-nfsroot-v3-$(DEB_HOST_ARCH)/boot/System.map-$(LINUX_VERSION)-v3-$(DEB_HOST_ARCH)
-	install -m 0644 $(CURDIR)/build-nfsroot-v3-armel/.config $(CURDIR)/debian/linux-image-$(LINUX_VERSION)-nfsroot-v3-$(DEB_HOST_ARCH)/boot/config-$(LINUX_VERSION)-v3-$(DEB_HOST_ARCH)
+	install -m 0644 $(CURDIR)/build-nfsroot-v3-armel/zImage $(CURDIR)/debian/linux-image-$(LINUX_VERSION)-nfsroot-v3-$(DEB_HOST_ARCH)/boot/vmlinuz-$(LINUX_VERSION)-nfsroot-v3-$(DEB_HOST_ARCH)
+	install -m 0644 $(CURDIR)/build-nfsroot-v3-armel/System.map $(CURDIR)/debian/linux-image-$(LINUX_VERSION)-nfsroot-v3-$(DEB_HOST_ARCH)/boot/System.map-$(LINUX_VERSION)-nfsroot-v3-$(DEB_HOST_ARCH)
+	install -m 0644 $(CURDIR)/build-nfsroot-v3-armel/.config $(CURDIR)/debian/linux-image-$(LINUX_VERSION)-nfsroot-v3-$(DEB_HOST_ARCH)/boot/config-$(LINUX_VERSION)-nfsroot-v3-$(DEB_HOST_ARCH)
 
 
 
