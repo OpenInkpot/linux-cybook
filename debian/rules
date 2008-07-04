@@ -19,6 +19,12 @@
 
 export DH_OPTIONS
 
+ifneq (,$(filter parallel=%,$(DEB_BUILD_OPTIONS)))
+	NUMJOBS = $(patsubst parallel=%,%,$(filter parallel=%,$(DEB_BUILD_OPTIONS)))
+	MAKEFLAGS += -j$(NUMJOBS)
+endif
+
+
 include /usr/share/dpatch/dpatch.make
 
 LINUX_VERSION = 2.6.25
