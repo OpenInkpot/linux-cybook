@@ -30,12 +30,11 @@
 #include <linux/device.h>
 #include <linux/ctype.h>
 #include <linux/eink_apollofb.h>
-
-#include <asm/uaccess.h>
+#include <linux/io.h>
+#include <linux/uaccess.h>
 
 #include <asm/arch/regs-gpio.h>
 #include <asm/hardware.h>
-#include <asm/io.h>
 
 /* Display specific information */
 #define DPY_W 600
@@ -84,16 +83,18 @@ static struct fb_var_screeninfo apollofb_var __devinitdata = {
 	.nonstd		= 1,
 };
 
-static inline int apollo_wait_for_ack_value(struct apollofb_par *par, unsigned int value)
+static inline int apollo_wait_for_ack_value(struct apollofb_par *par,
+		unsigned int value)
 {
 	unsigned long timeout = jiffies + 2 * HZ;
 
-	while ((par->ops->get_ctl_pin(H_ACK) != value) && time_before(jiffies, timeout)) {
+	while ((par->ops->get_ctl_pin(H_ACK) != value) &&
+			time_before(jiffies, timeout))
 		schedule();
-	}
 
 	if (par->ops->get_ctl_pin(H_ACK) != value) {
-		printk(KERN_ERR "%s: Wait for H_ACK == %u, timeout\n", __FUNCTION__, value);
+		printk(KERN_ERR "%s: Wait for H_ACK == %u, timeout\n",
+				__func__, value);
 		return 1;
 	}
 
@@ -103,7 +104,7 @@ static inline int apollo_wait_for_ack_value(struct apollofb_par *par, unsigned i
 #define apollo_wait_for_ack(par)	apollo_wait_for_ack_value(par, 0)
 #define apollo_wait_for_ack_clear(par)	apollo_wait_for_ack_value(par, 1)
 
-static inline void apollo_send_data(struct apollofb_par *par, unsigned char data)
+static void apollo_send_data(struct apollofb_par *par, unsigned char data)
 {
 	par->ops->write_value(data);
 	par->ops->set_ctl_pin(H_DS, 0);
@@ -318,7 +319,9 @@ static void apollofb_dpy_deferred_io(struct fb_info *info,
 				if (y2 >= height)
 					y2 = height - 1;
 
-				apollofb_apollo_update_part(par, 0, y1,	width - 1, y2);
+				apollofb_apollo_update_part(par,
+						0, y1,
+						width - 1, y2);
 
 				start_page = cur->index;
 				end_page = cur->index;
@@ -741,10 +744,14 @@ static ssize_t apollofb_defio_delay_store(struct device *dev,
 	return ret;
 }
 
-DEVICE_ATTR(manual_refresh, 0666, apollofb_manual_refresh_show, apollofb_manual_refresh_store);
-DEVICE_ATTR(partial_update, 0666, apollofb_partial_update_show, apollofb_partial_update_store);
-DEVICE_ATTR(defio_delay, 0666, apollofb_defio_delay_show, apollofb_defio_delay_store);
-DEVICE_ATTR(use_sleep_mode, 0666, apollofb_use_sleep_mode_show, apollofb_use_sleep_mode_store);
+DEVICE_ATTR(manual_refresh, 0666,
+		apollofb_manual_refresh_show, apollofb_manual_refresh_store);
+DEVICE_ATTR(partial_update, 0666,
+		apollofb_partial_update_show, apollofb_partial_update_store);
+DEVICE_ATTR(defio_delay, 0666,
+		apollofb_defio_delay_show, apollofb_defio_delay_store);
+DEVICE_ATTR(use_sleep_mode, 0666,
+		apollofb_use_sleep_mode_show, apollofb_use_sleep_mode_store);
 
 static struct file_operations apollofb_wf_fops = {
 	.owner = THIS_MODULE,
@@ -817,12 +824,9 @@ static u16 blue4[] __read_mostly = {
     0x0000, 0x5555, 0xaaaa, 0xffff
 };
 
-
 static const struct fb_cmap eink_apollofb_4_colors = {
-	    .len=4, .red=red4, .green=green4, .blue=blue4
+	    .len = 4, .red = red4, .green = green4, .blue = blue4
 };
-
-
 
 static int __devinit apollofb_probe(struct platform_device *dev)
 {
@@ -850,7 +854,8 @@ static int __devinit apollofb_probe(struct platform_device *dev)
 			!pdata->ops.read_value ||
 			!pdata->ops.write_value) {
 		retval = -EINVAL;
-		dev_err(&dev->dev, "Invalid platform data: missing operations\n");
+		dev_err(&dev->dev,
+				"Invalid platform data: missing operations\n");
 		goto err1;
 	}
 
@@ -901,7 +906,8 @@ static int __devinit apollofb_probe(struct platform_device *dev)
 	platform_set_drvdata(dev, info);
 
 	printk(KERN_INFO
-	       "fb%d: eInk Apollo frame buffer device, using %dK of video memory (%p)\n",
+	       "fb%d: eInk Apollo frame buffer device,"
+	       "using %dK of video memory (%p)\n",
 	       info->node, videomemorysize >> 10, videomemory);
 
 
@@ -976,7 +982,6 @@ static int __devexit apollofb_remove(struct platform_device *dev)
 }
 
 #ifdef CONFIG_PM
-extern void pm_dbg(const char *fmt, ...);
 static int apollofb_suspend(struct platform_device *pdev, pm_message_t message)
 {
 	struct fb_info *info = platform_get_drvdata(pdev);
@@ -1009,7 +1014,7 @@ static struct platform_driver apollofb_driver = {
 	.probe	= apollofb_probe,
 	.remove = apollofb_remove,
 	.driver	= {
-		.owner 	= THIS_MODULE,
+		.owner	= THIS_MODULE,
 		.name	= "eink-apollo",
 	},
 #ifdef CONFIG_PM

@@ -1,7 +1,7 @@
 
 enum eink_apollo_controls {
 	H_CD = 0,
-	H_RW = 1,	
+	H_RW = 1,
 	H_DS = 2,
 	H_ACK = 3,
 	H_WUP = 4,
