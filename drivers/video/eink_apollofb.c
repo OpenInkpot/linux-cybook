@@ -44,7 +44,6 @@
 
 struct apollofb_options {
 	unsigned int manual_refresh:1;
-	unsigned int partial_update:1;
 	unsigned int use_sleep_mode:1;
 };
 
@@ -175,55 +174,6 @@ static void apollo_wakeup(struct apollofb_par *par)
 	apollo_wait_for_ack_clear(par);
 }
 
-
-/* main apollofb functions */
-
-static void apollofb_dpy_update(struct apollofb_par *par)
-{
-	unsigned char *buf = (unsigned char __force *)par->info->screen_base;
-	int count = par->info->fix.smem_len;
-	int bpp = par->info->var.green.length;
-	unsigned char tmp, mask;
-	unsigned int i, k;
-	unsigned int pixels_in_byte = 8 / bpp;
-
-	cancel_delayed_work(&par->deferred_work);
-
-	mask = 0;
-	for (i = 0; i < bpp; i++)
-		mask = (mask << 1) | 1;
-
-	mutex_lock(&par->lock);
-
-	if (par->current_mode == APOLLO_STATUS_MODE_SLEEP)
-		apollo_set_normal_mode(par);
-
-	if (par->options.manual_refresh)
-		apollo_send_command(par, APOLLO_MANUAL_REFRESH);
-
-	apollo_send_command(par, APOLLO_LOAD_PICTURE);
-
-	k = 0;
-	tmp = 0;
-	for (i = 0; i < count; i++) {
-		tmp = (tmp << bpp) | (buf[i] & mask);
-		k++;
-		if (k % pixels_in_byte == 0)
-			apollo_send_data(par, tmp);
-	}
-
-	apollo_send_command(par, APOLLO_STOP_LOADING);
-	apollo_send_command(par, APOLLO_DISPLAY_PICTURE);
-
-	if (par->options.use_sleep_mode)
-		apollo_set_sleep_mode(par);
-
-	mutex_unlock(&par->lock);
-}
-
-/*
- * x1 must be less than x2, y1 < y2
- */
 static void apollofb_apollo_update_part(struct apollofb_par *par,
 		unsigned int x1, unsigned int y1,
 		unsigned int x2, unsigned int y2)
@@ -303,48 +253,47 @@ static void apollofb_dpy_deferred_io(struct fb_info *info,
 	struct page *cur;
 
 
-	if (par->options.partial_update) {
-		list_for_each_entry(cur, pagelist, lru) {
-			if (start_page == -1) {
-				start_page = cur->index;
-				end_page = cur->index;
-				continue;
-			}
-
-			if (cur->index == end_page + 1) {
-				end_page++;
-			} else {
-				y1 = start_page * PAGE_SIZE / width;
-				y2 = ((end_page + 1) * PAGE_SIZE - 1) / width;
-				if (y2 >= height)
-					y2 = height - 1;
-
-				apollofb_apollo_update_part(par,
-						0, y1,
-						width - 1, y2);
-
-				start_page = cur->index;
-				end_page = cur->index;
-			}
+	list_for_each_entry(cur, pagelist, lru) {
+		if (start_page == -1) {
+			start_page = cur->index;
+			end_page = cur->index;
+			continue;
 		}
 
-		y1 = start_page * PAGE_SIZE / width;
-		y2 = ((end_page + 1) * PAGE_SIZE - 1) / width;
-		if (y2 >= height)
-			y2 = height - 1;
+		if (cur->index == end_page + 1) {
+			end_page++;
+		} else {
+			y1 = start_page * PAGE_SIZE / width;
+			y2 = ((end_page + 1) * PAGE_SIZE - 1) / width;
+			if (y2 >= height)
+				y2 = height - 1;
 
-		apollofb_apollo_update_part(par, 0, y1,	width - 1, y2);
-	} else {
-		apollofb_dpy_update(par);
+			apollofb_apollo_update_part(par, 0, y1, width - 1, y2);
+
+			start_page = cur->index;
+			end_page = cur->index;
+		}
 	}
+
+	y1 = start_page * PAGE_SIZE / width;
+	y2 = ((end_page + 1) * PAGE_SIZE - 1) / width;
+	if (y2 >= height)
+		y2 = height - 1;
+
+	apollofb_apollo_update_part(par, 0, y1,	width - 1, y2);
 }
 
 static void apollofb_deferred_work(struct work_struct *work)
 {
 	struct apollofb_par *par = container_of(work, struct apollofb_par,
-						deferred_work.work);
+			deferred_work.work);
+	struct fb_info *info = par->info;
+	unsigned int width = is_portrait(info->var) ? info->var.xres :
+							info->var.yres;
+	unsigned int height = is_portrait(info->var) ? info->var.yres :
+							info->var.xres;
 
-	apollofb_dpy_update(par);
+	apollofb_apollo_update_part(par, 0, 0, width - 1, height - 1);
 }
 
 static void apollofb_fillrect(struct fb_info *info,
@@ -679,37 +628,6 @@ static ssize_t apollofb_use_sleep_mode_store(struct device *dev,
 	return ret;
 }
 
-static ssize_t apollofb_partial_update_show(struct device *dev,
-		struct device_attribute *attr, char *buf)
-{
-	struct fb_info *info = dev_get_drvdata(dev);
-	struct apollofb_par *par = info->par;
-
-	sprintf(buf, "%d\n", par->options.partial_update);
-	return strlen(buf) + 1;
-}
-
-static ssize_t apollofb_partial_update_store(struct device *dev,
-		struct device_attribute *attr, const char *buf, size_t size)
-{
-	struct fb_info *info = dev_get_drvdata(dev);
-	struct apollofb_par *par = info->par;
-	char *after;
-	unsigned long state = simple_strtoul(buf, &after, 10);
-	size_t count = after - buf;
-	ssize_t ret = -EINVAL;
-
-	if (*after && isspace(*after))
-		count++;
-
-	if ((count == size) && (state <= 1)) {
-		ret = count;
-		par->options.partial_update = state;
-	}
-
-	return ret;
-}
-
 static ssize_t apollofb_defio_delay_show(struct device *dev,
 		struct device_attribute *attr, char *buf)
 {
@@ -746,8 +664,6 @@ static ssize_t apollofb_defio_delay_store(struct device *dev,
 
 DEVICE_ATTR(manual_refresh, 0666,
 		apollofb_manual_refresh_show, apollofb_manual_refresh_store);
-DEVICE_ATTR(partial_update, 0666,
-		apollofb_partial_update_show, apollofb_partial_update_store);
 DEVICE_ATTR(defio_delay, 0666,
 		apollofb_defio_delay_show, apollofb_defio_delay_store);
 DEVICE_ATTR(use_sleep_mode, 0666,
@@ -870,7 +786,6 @@ static int __devinit apollofb_probe(struct platform_device *dev)
 	mutex_init(&par->lock);
 	INIT_DELAYED_WORK(&par->deferred_work, apollofb_deferred_work);
 	par->options.manual_refresh = 0;
-	par->options.partial_update = 1;
 	par->options.use_sleep_mode = 0;
 	par->ops = &pdata->ops;
 
@@ -923,10 +838,6 @@ static int __devinit apollofb_probe(struct platform_device *dev)
 	if (retval)
 		goto err_devattr_manref;
 
-	retval = device_create_file(info->dev, &dev_attr_partial_update);
-	if (retval)
-		goto err_devattr_partupd;
-
 	retval = device_create_file(info->dev, &dev_attr_defio_delay);
 	if (retval)
 		goto err_devattr_defio_delay;
@@ -942,8 +853,6 @@ static int __devinit apollofb_probe(struct platform_device *dev)
 err_devattr_use_sleep_mode:
 	device_remove_file(info->dev, &dev_attr_defio_delay);
 err_devattr_defio_delay:
-	device_remove_file(info->dev, &dev_attr_partial_update);
-err_devattr_partupd:
 	device_remove_file(info->dev, &dev_attr_manual_refresh);
 err_devattr_manref:
 	device_remove_file(info->dev, &dev_attr_temperature);
@@ -970,7 +879,6 @@ static int __devexit apollofb_remove(struct platform_device *dev)
 
 		device_remove_file(info->dev, &dev_attr_use_sleep_mode);
 		device_remove_file(info->dev, &dev_attr_manual_refresh);
-		device_remove_file(info->dev, &dev_attr_partial_update);
 		device_remove_file(info->dev, &dev_attr_defio_delay);
 		device_remove_file(info->dev, &dev_attr_temperature);
 		unregister_framebuffer(info);
