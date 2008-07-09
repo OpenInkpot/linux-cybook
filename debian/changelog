@@ -1,3 +1,10 @@
+linux-2.6 (2.6.25-4) unstable; urgency=low
+
+  * Fix broken resume function
+  * Remove unneeded 'total display update' routines
+
+ -- Yauhen Kharuzhy <jekhor@gmail.com>  Thu, 10 Jul 2008 01:03:20 +0300
+
 linux-2.6 (2.6.25-3) unstable; urgency=low
 
   * Apollo sleep & resume work now.
