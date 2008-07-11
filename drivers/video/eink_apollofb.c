@@ -103,21 +103,28 @@ static inline int apollo_wait_for_ack_value(struct apollofb_par *par,
 #define apollo_wait_for_ack(par)	apollo_wait_for_ack_value(par, 0)
 #define apollo_wait_for_ack_clear(par)	apollo_wait_for_ack_value(par, 1)
 
-static void apollo_send_data(struct apollofb_par *par, unsigned char data)
+static int apollo_send_data(struct apollofb_par *par, unsigned char data)
 {
+	int res = 0;;
+
 	par->ops->write_value(data);
 	par->ops->set_ctl_pin(H_DS, 0);
-	apollo_wait_for_ack(par);
+	res = apollo_wait_for_ack(par);
 	par->ops->set_ctl_pin(H_DS, 1);
-	apollo_wait_for_ack_clear(par);
+	if (!res)
+		apollo_wait_for_ack_clear(par);
+	return res;
 }
 
 
-static void apollo_send_command(struct apollofb_par *par, unsigned char cmd)
+static int apollo_send_command(struct apollofb_par *par, unsigned char cmd)
 {
+	int res;
+
 	par->ops->set_ctl_pin(H_CD, 1);
-	apollo_send_data(par, cmd);
+	res = apollo_send_data(par, cmd);
 	par->ops->set_ctl_pin(H_CD, 0);
+	return res;
 }
 
 static unsigned char apollo_read_data(struct apollofb_par *par)
@@ -132,15 +139,6 @@ static unsigned char apollo_read_data(struct apollofb_par *par)
 	apollo_wait_for_ack_clear(par);
 	par->ops->set_ctl_pin(H_RW, 0);
 
-	return res;
-}
-
-static unsigned char apollo_get_status(struct apollofb_par *par)
-{
-	unsigned char res;
-
-	apollo_send_command(par, APOLLO_GET_STATUS);
-	res = apollo_read_data(par);
 	return res;
 }
 
@@ -752,6 +750,7 @@ static int __devinit apollofb_probe(struct platform_device *dev)
 	unsigned char *videomemory;
 	struct apollofb_par *par;
 	struct eink_apollofb_platdata *pdata = dev->dev.platform_data;
+	unsigned char apollo_display_size;
 
 	videomemorysize = (DPY_W * DPY_H)/8 * apollofb_var.bits_per_pixel;
 
@@ -806,6 +805,21 @@ static int __devinit apollofb_probe(struct platform_device *dev)
 	par->ops->set_ctl_pin(H_RW, 0);
 
 	mutex_lock(&par->lock);
+	if (apollo_send_command(par, APOLLO_DISPLAY_SIZE)) {
+		dev_err(&dev->dev, "Apollo controller is not detected.\n");
+		mutex_unlock(&par->lock);
+		goto err1;
+	}
+
+	apollo_display_size = apollo_read_data(par);
+	if (apollo_display_size != 0x22) {
+		dev_err(&dev->dev, "Unknown or missing eInk controller, "
+				"display size byte is 0x%02x\n",
+				apollo_display_size);
+		mutex_unlock(&par->lock);
+		goto err1;
+	}
+
 	apollo_set_normal_mode(par);
 	apollo_send_command(par, APOLLO_SET_DEPTH);
 	apollo_send_data(par, 0x02);
