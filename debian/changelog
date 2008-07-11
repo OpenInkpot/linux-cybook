@@ -1,3 +1,9 @@
+linux-2.6 (2.6.25-5) unstable; urgency=low
+
+  * Fix kernel cmdline
+
+ -- Yauhen Kharuzhy <jekhor@gmail.com>  Fri, 11 Jul 2008 22:26:17 +0300
+
 linux-2.6 (2.6.25-4) unstable; urgency=low
 
   * Fix broken resume function
