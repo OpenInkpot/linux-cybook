@@ -101,7 +101,7 @@ static struct s3c24xx_led_platdata lbookv3_pdata_led_green = {
 	.gpio		= S3C2410_GPC6,
 	.flags		= 0,
 	.name		= "led:green",
-//	.def_trigger	= "nand-disk",
+	.def_trigger	= "nand-disk",
 };
 
 static struct platform_device lbookv3_led_red = {
