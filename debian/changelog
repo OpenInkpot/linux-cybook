@@ -1,3 +1,14 @@
+linux-2.6 (2.6.25-6) unstable; urgency=low
+
+  * fbcon: Act like 1-bit color depth screen
+  * Invert fbcon colors
+  * eink_apollofb: Add void blank() function
+  * s3cmci: Fix use of s3c2410_dma_request()
+  * Enable default green led trigger 'nand-disk'
+  * New config
+
+ -- Yauhen Kharuzhy <jekhor@gmail.com>  Sun, 13 Jul 2008 14:58:07 +0300
+
 linux-2.6 (2.6.25-5) unstable; urgency=low
 
   * Fix kernel cmdline
