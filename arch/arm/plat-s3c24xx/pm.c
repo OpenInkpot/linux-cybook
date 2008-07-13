@@ -155,7 +155,6 @@ void pm_dbg(const char *fmt, ...)
 
 	printascii(buff);
 }
-EXPORT_SYMBOL(pm_dbg);
 
 static void s3c2410_pm_debug_init(void)
 {
@@ -699,8 +698,6 @@ static int s3c2410_pm_enter(suspend_state_t state)
 	if (!any_allowed(s3c_irqwake_intmask, s3c_irqwake_intallow) &&
 	    !any_allowed(s3c_irqwake_eintmask, s3c_irqwake_eintallow)) {
 		printk(KERN_ERR PFX "No sources enabled for wake-up!\n");
-		printk(KERN_ERR PFX "intmask: %08x, intallow: %08x\n", s3c_irqwake_intmask, s3c_irqwake_intallow);
-		printk(KERN_ERR PFX "eintmask: %08x, eintallow: %08x\n", s3c_irqwake_eintmask, s3c_irqwake_eintallow);
 		printk(KERN_ERR PFX "Aborting sleep\n");
 		return -EINVAL;
 	}

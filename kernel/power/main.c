@@ -393,7 +393,6 @@ static inline int valid_state(suspend_state_t state)
 	/* All states need lowlevel support and need to be valid
 	 * to the lowlevel implementation, no valid callback
 	 * implies that none are valid. */
-	printk(KERN_DEBUG "suspend_ops = %p\n", suspend_ops);
 	if (!suspend_ops || !suspend_ops->valid || !suspend_ops->valid(state))
 		return 0;
 	return 1;
@@ -484,7 +483,6 @@ static ssize_t state_show(struct kobject *kobj, struct kobj_attribute *attr,
 	int i;
 
 	for (i = 0; i < PM_SUSPEND_MAX; i++) {
-		printk(KERN_DEBUG "pm_states[i] = %s, valid_state(i) = %d\n", pm_states[i], valid_state(i));
 		if (pm_states[i] && valid_state(i))
 			s += sprintf(s,"%s ", pm_states[i]);
 	}
