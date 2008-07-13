@@ -378,6 +378,11 @@ static int apollofb_sync(struct fb_info *info)
 	return 0;
 }
 
+static int apollofb_blank(int blank, struct fb_info *info)
+{
+	return 0;
+}
+
 static int apollofb_check_var(struct fb_var_screeninfo *var,
 			      struct fb_info *info)
 {
@@ -686,6 +691,7 @@ static struct fb_ops apollofb_ops = {
 	.fb_sync	= apollofb_sync,
 	.fb_check_var	= apollofb_check_var,
 	.fb_set_par	= apollofb_set_par,
+	.fb_blank	= apollofb_blank,
 };
 
 static struct fb_deferred_io apollofb_defio = {
