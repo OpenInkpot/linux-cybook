@@ -355,12 +355,6 @@ static inline int get_color(struct vc_data *vc, struct fb_info *info,
 		case 0:
 			color = 0; /* black */
 			break;
-		case 1 ... 6:
-			color = 2; /* white */
-			break;
-		case 7 ... 8:
-			color = 1; /* gray */
-			break;
 		default:
 			color = 3; /* intense white */
 			break;
