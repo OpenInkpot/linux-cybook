@@ -205,10 +205,17 @@ static struct s3c2410_nand_set lbookv3_nand_sets[] = {
  * chips and beyond.
 */
 
+
 static struct s3c2410_platform_nand lbookv3_nand_info = {
+#ifdef CONFIG_ARCH_LBOOK_V3_EXT
+	.tacls		= 12,
+	.twrph0		= 12,
+	.twrph1		= 10,
+#else
 	.tacls		= 30,
 	.twrph0		= 60,
 	.twrph1		= 30,
+#endif
 	.nr_sets	= ARRAY_SIZE(lbookv3_nand_sets),
 	.sets		= lbookv3_nand_sets,
 };
