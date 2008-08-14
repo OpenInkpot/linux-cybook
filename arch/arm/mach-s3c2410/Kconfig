@@ -66,6 +66,12 @@ config ARCH_LBOOK_V3
 	help
 	   Say Y here if you are using the lBook/HanLin eReader V3
 
+config ARCH_LBOOK_V3_EXT
+	bool "V3ext modification"
+	depends on ARCH_LBOOK_V3
+	help
+	  Say Y here if you have a new modification of V3 (with 512 MiB of internal Flash ROM)
+
 config ARCH_H1940
 	bool "IPAQ H1940"
 	select CPU_S3C2410

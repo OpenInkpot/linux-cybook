@@ -120,6 +120,43 @@ static struct platform_device lbookv3_led_green = {
 	},
 };
 
+#ifdef CONFIG_ARCH_LBOOK_V3_EXT
+
+static struct mtd_partition lbookv3_nand_part[] = {
+	[0] = {
+		.name	= "KERNEL",
+		.offset = SZ_1M * 8,
+		.size	= SZ_1M,
+	},
+	[1] = {
+		.name	= "ROOTFS",
+		.offset = SZ_1M * 9,
+		.size	= SZ_1M * 50,
+	},
+	[2] = {
+		.name	= "LOGO",
+		.offset = SZ_1M * 60,
+		.size	= SZ_1M,
+	},
+	[3] = {
+		.name	= "USERDATA",
+		.offset	= SZ_1M * 0x3D,
+		.size	= SZ_2M,
+	},
+	[4] = {
+		.name	= "STORAGE",
+		.offset	= SZ_1M * 0x3F,
+		.size	= SZ_1M * 9,
+	},
+	[5] = {
+		.name	= "SPARE",
+		.size	= SZ_1M * 8,
+		.offset	= 0,
+	},
+};
+
+#else
+
 static struct mtd_partition lbookv3_nand_part[] = {
 	[0] = {
 		.name	= "KERNEL",
@@ -152,6 +189,8 @@ static struct mtd_partition lbookv3_nand_part[] = {
 		.offset	= 0,
 	},
 };
+#endif
+
 
 static struct s3c2410_nand_set lbookv3_nand_sets[] = {
 	[0] = {
