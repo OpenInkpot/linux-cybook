@@ -452,7 +452,7 @@ static ssize_t apollofb_wf_read(struct file *f, char __user *buf,
 {
 	unsigned char data;
 	char __user *p = buf;
-	int i;
+	int i, ret = 0;
 	struct apollofb_par *par = f->private_data;
 
 	mutex_lock(&par->lock);
@@ -460,7 +460,7 @@ static ssize_t apollofb_wf_read(struct file *f, char __user *buf,
 		apollo_set_normal_mode(par);
 
 	if (*f_pos > APOLLO_WAVEFORMS_FLASH_SIZE - 1)
-		return 0;
+		goto err;
 
 	if (*f_pos + count > APOLLO_WAVEFORMS_FLASH_SIZE)
 		count = APOLLO_WAVEFORMS_FLASH_SIZE - *f_pos;
@@ -474,18 +474,23 @@ static ssize_t apollofb_wf_read(struct file *f, char __user *buf,
 
 		data = apollo_read_data(par);
 
-		if (copy_to_user(p, &data, 1))
-			return -EFAULT;
+		if (copy_to_user(p, &data, 1)) {
+			ret = -EFAULT;
+			goto err;
+		}
 
 		p++;
 	}
 
 	if (par->options.use_sleep_mode)
 		apollo_set_sleep_mode(par);
-	mutex_unlock(&par->lock);
 
 	*f_pos += count;
-	return count;
+	ret = count;
+err:
+	mutex_unlock(&par->lock);
+
+	return ret;
 }
 
 static ssize_t apollofb_wf_write(struct file *f, const char __user *buf,
@@ -495,6 +500,7 @@ static ssize_t apollofb_wf_write(struct file *f, const char __user *buf,
 	const char __user *p = buf;
 	int i;
 	struct apollofb_par *par = f->private_data;
+	int ret = 0;
 
 	mutex_lock(&par->lock);
 
@@ -502,14 +508,18 @@ static ssize_t apollofb_wf_write(struct file *f, const char __user *buf,
 		apollo_set_normal_mode(par);
 
 	if (*f_pos > APOLLO_WAVEFORMS_FLASH_SIZE - 1)
-		return 0;
+		goto err;
 
 	if (*f_pos + count > APOLLO_WAVEFORMS_FLASH_SIZE)
 		count = APOLLO_WAVEFORMS_FLASH_SIZE - *f_pos;
 
+	printk(KERN_INFO "*f_pos = %lld, count = %lu\n", *f_pos, count);
+
 	for (i = *f_pos; i < *f_pos + count; i++) {
-		if (copy_to_user(&data, p, 1))
-			return -EFAULT;
+		if (copy_from_user(&data, p, 1)) {
+			ret = -EFAULT;
+			goto err;
+		}
 
 		apollo_send_command(par, APOLLO_WRITE_TO_FLASH);
 		apollo_send_data(par, (i >> 16) & 0xff);
@@ -523,10 +533,14 @@ static ssize_t apollofb_wf_write(struct file *f, const char __user *buf,
 
 	if (par->options.use_sleep_mode)
 		apollo_set_sleep_mode(par);
-	mutex_unlock(&par->lock);
 
 	*f_pos += count;
-	return count;
+	ret = count;
+
+err:
+	mutex_unlock(&par->lock);
+
+	return ret;
 }
 
 static int apollofb_wf_open(struct inode *i, struct file *f)
