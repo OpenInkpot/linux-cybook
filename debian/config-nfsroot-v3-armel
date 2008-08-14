@@ -1,7 +1,7 @@
 #
 # Automatically generated make config: don't edit
 # Linux kernel version: 2.6.25.10
-# Fri Jul  4 23:39:10 2008
+# Thu Aug 14 17:48:54 2008
 #
 CONFIG_ARM=y
 CONFIG_SYS_SUPPORTS_APM_EMULATION=y
@@ -185,6 +185,7 @@ CONFIG_S3C2410_CLOCK=y
 #
 # CONFIG_ARCH_SMDK2410 is not set
 CONFIG_ARCH_LBOOK_V3=y
+# CONFIG_ARCH_LBOOK_V3_EXT is not set
 # CONFIG_ARCH_H1940 is not set
 # CONFIG_MACH_N30 is not set
 # CONFIG_ARCH_BAST is not set
