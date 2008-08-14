@@ -803,6 +803,10 @@ static void s3c2410_nand_update_chip(struct s3c2410_nand_info *info,
 #ifdef CONFIG_ARCH_LBOOK_V3
 			chip->ecc.size	    = 2048;
 			chip->ecc.layout    = &nand_hw_eccoob;
+#ifdef CONFIG_MTD_NAND_DUMB_BADBLOCK_TRANSLATION
+			chip->bb_spare_blocks = 64;
+#endif
+
 #else
 			chip->ecc.size	    = 256;
 #endif
@@ -810,6 +814,9 @@ static void s3c2410_nand_update_chip(struct s3c2410_nand_info *info,
 			chip->ecc.size	    = 512;
 			chip->ecc.bytes	    = 3;
 			chip->ecc.layout    = &nand_hw_eccoob;
+#ifdef CONFIG_MTD_NAND_DUMB_BADBLOCK_TRANSLATION
+			chip->bb_spare_blocks = 64;
+#endif
 		}
 	}
 }

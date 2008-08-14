@@ -429,10 +429,10 @@ struct nand_chip {
 	struct nand_bbt_descr	*badblock_pattern;
 
 #ifdef CONFIG_MTD_NAND_DUMB_BADBLOCK_TRANSLATION
-	#define NAND_BB_MAP_SPARE_BLOCKS	64
-
-	int	bb_translation_table[NAND_BB_MAP_SPARE_BLOCKS];
-	int	bb_translation_table_size;
+	/* size of spare area, in bytes */
+	unsigned int	*bb_translation_table;
+	unsigned int	bb_translation_table_size;
+	unsigned int	bb_spare_blocks;
 #endif
 
 	void		*priv;

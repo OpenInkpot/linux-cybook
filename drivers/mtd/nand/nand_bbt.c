@@ -360,25 +360,29 @@ static void nand_bbt_add_to_translation_table(struct mtd_info *mtd, int block)
 {
 	struct nand_chip *this = mtd->priv;
 
-	if (this->bb_translation_table_size == NAND_BB_MAP_SPARE_BLOCKS) {
-		printk(KERN_ERR "Badblock translation table is full!\n");
+	if (block < this->bb_spare_blocks) {
+		printk(KERN_INFO "Badblock in spare area, skipping it\n");
 		return;
 	}
-/* FIXME: doesn't work correctly with many badblocks in spare area! */
+
+	if (this->bb_translation_table_size == this->bb_spare_blocks) {
+		printk(KERN_ERR "Badblock translation table is full (%d blocks)!\n", this->bb_spare_blocks);
+		return;
+	}
 	/* Skip bads in spare area */
 	while (nand_isbad_bbt(mtd, this->bb_translation_table_size << this->phys_erase_shift, 1) &&
-			(this->bb_translation_table_size < NAND_BB_MAP_SPARE_BLOCKS))
+			(this->bb_translation_table_size < this->bb_spare_blocks))
 		this->bb_translation_table_size++;
 
-	if (this->bb_translation_table_size == NAND_BB_MAP_SPARE_BLOCKS) {
+	if (this->bb_translation_table_size == this->bb_spare_blocks) {
 		printk(KERN_ERR "Badblock translation table is full!\n");
 		return;
 	}
 
 	this->bb_translation_table[this->bb_translation_table_size] = block;
-	this->bb_translation_table_size++;
 	printk(KERN_INFO "Add translation of block 0x%x to block 0x%x\n", block,
 			this->bb_translation_table_size);
+	this->bb_translation_table_size++;
 
 }
 #endif
