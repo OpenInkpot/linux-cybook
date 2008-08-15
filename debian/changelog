@@ -1,3 +1,9 @@
+linux-2.6 (2.6.25-8) unstable; urgency=low
+
+  * eink_apollofb: Increase picture loading speed
+
+ -- Yauhen Kharuzhy <jekhor@gmail.com>  Fri, 15 Aug 2008 22:22:44 +0300
+
 linux-2.6 (2.6.25-7) unstable; urgency=low
 
   * V3ext packages have been added
