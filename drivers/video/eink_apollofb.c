@@ -12,6 +12,8 @@
  *
  */
 
+/* #define DEBUG */
+
 #include <linux/module.h>
 #include <linux/kernel.h>
 #include <linux/errno.h>
@@ -32,6 +34,7 @@
 #include <linux/eink_apollofb.h>
 #include <linux/io.h>
 #include <linux/uaccess.h>
+#include <linux/device.h>
 
 #include <asm/arch/regs-gpio.h>
 #include <asm/hardware.h>
@@ -87,15 +90,13 @@ static inline int apollo_wait_for_ack_value(struct apollofb_par *par,
 {
 	unsigned long timeout = jiffies + 2 * HZ;
 
-	while ((par->ops->get_ctl_pin(H_ACK) != value) &&
-			time_before(jiffies, timeout))
-		schedule();
-
-	if (par->ops->get_ctl_pin(H_ACK) != value) {
-		printk(KERN_ERR "%s: Wait for H_ACK == %u, timeout\n",
-				__func__, value);
-		return 1;
-	}
+	while (par->ops->get_ctl_pin(H_ACK) != value)
+		if (time_before(jiffies, timeout)) {
+		} else {
+			printk(KERN_ERR "%s: Wait for H_ACK == %u, timeout\n",
+					__func__, value);
+			return 1;
+		}
 
 	return 0;
 }
@@ -107,12 +108,13 @@ static int apollo_send_data(struct apollofb_par *par, unsigned char data)
 {
 	int res = 0;;
 
+	res = apollo_wait_for_ack_clear(par);
 	par->ops->write_value(data);
 	par->ops->set_ctl_pin(H_DS, 0);
-	res = apollo_wait_for_ack(par);
-	par->ops->set_ctl_pin(H_DS, 1);
 	if (!res)
-		apollo_wait_for_ack_clear(par);
+		res = apollo_wait_for_ack(par);
+	par->ops->set_ctl_pin(H_DS, 1);
+
 	return res;
 }
 
@@ -185,6 +187,7 @@ static void apollofb_apollo_update_part(struct apollofb_par *par,
 	unsigned char *buf = (unsigned char __force *)info->screen_base;
 	unsigned char tmp, mask;
 
+	dev_dbg(info->dev, "%s called\n", __FUNCTION__);
 	y1 -= y1 % 4;
 
 	if ((y2 + 1) % 4)
@@ -227,6 +230,7 @@ static void apollofb_apollo_update_part(struct apollofb_par *par,
 				apollo_send_data(par, tmp);
 		}
 
+	dev_dbg(info->dev, "%s: stop loading\n", __FUNCTION__);
 	apollo_send_command(par, APOLLO_STOP_LOADING);
 	apollo_send_command(par, APOLLO_DISPLAY_PARTIAL_PICTURE);
 
@@ -234,6 +238,7 @@ static void apollofb_apollo_update_part(struct apollofb_par *par,
 		apollo_set_sleep_mode(par);
 
 	mutex_unlock(&par->lock);
+	dev_dbg(info->dev, "%s finished\n", __FUNCTION__);
 }
 
 /* this is called back from the deferred io workqueue */
@@ -250,6 +255,7 @@ static void apollofb_dpy_deferred_io(struct fb_info *info,
 	unsigned int y1 = 0, y2 = 0;
 	struct page *cur;
 
+	dev_dbg(info->dev, "%s called\n", __FUNCTION__);
 
 	list_for_each_entry(cur, pagelist, lru) {
 		if (start_page == -1) {
@@ -279,6 +285,8 @@ static void apollofb_dpy_deferred_io(struct fb_info *info,
 		y2 = height - 1;
 
 	apollofb_apollo_update_part(par, 0, y1,	width - 1, y2);
+
+	dev_dbg(info->dev, "%s finished\n", __FUNCTION__);
 }
 
 static void apollofb_deferred_work(struct work_struct *work)
@@ -342,6 +350,8 @@ static ssize_t apollofb_write(struct fb_info *info, const char __user *buf,
 	unsigned int xres;
 	unsigned int fbmemlength;
 
+	dev_dbg(info->dev, "%s started\n", __FUNCTION__);
+
 	p = *ppos;
 	par = info->par;
 	xres = info->var.xres;
@@ -366,6 +376,8 @@ static ssize_t apollofb_write(struct fb_info *info, const char __user *buf,
 	}
 
 	schedule_delayed_work(&par->deferred_work, info->fbdefio->delay);
+
+	dev_dbg(info->dev, "%s finished\n", __FUNCTION__);
 
 	if (count)
 		return count;
