@@ -80,7 +80,7 @@ static void n411_wait_for_ack(struct hecubafb_par *par, int clear)
 	int timeout;
 	unsigned char tmp;
 
-	timeout = 500;
+	timeout = 3000;
 	do {
 		tmp = n411_get_ctl(par);
 		if ((tmp & HCB_ACK_BIT) && (!clear))
@@ -130,12 +130,13 @@ static int n411_init_board(struct hecubafb_par *par)
 	par->send_data(par, 0x81);
 
 	/* have to wait while display resets */
-	udelay(1000);
+	mdelay(3000);
 
 	/* if we were told to splash the screen, we just clear it */
 	if (!nosplash) {
 		par->send_command(par, APOLLO_ERASE_DISPLAY);
 		par->send_data(par, splashval);
+		mdelay(2000);
 	}
 
 	return 0;

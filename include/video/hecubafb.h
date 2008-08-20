@@ -18,6 +18,9 @@
 #define APOLLO_DISPLAY_IMG	0xA2
 #define APOLLO_ERASE_DISPLAY	0xA3
 #define APOLLO_INIT_DISPLAY	0xA4
+#define APOLLO_START_PART_IMG	0xB0
+#define APOLLO_DISPLAY_PART_IMG	0xB1
+#define APOLLO_SET_DEPTH	0xF3
 
 /* Hecuba interface specific defines */
 #define HCB_WUP_BIT	0x01
