@@ -264,6 +264,7 @@ static void lbookv3_mmc_set_power(unsigned char power_mode, unsigned short vdd)
 		case MMC_POWER_OFF:
 		default:
 			s3c2410_gpio_cfgpin(S3C2410_GPB6, S3C2410_GPB6_OUTP);
+			s3c2410_gpio_pullup(S3C2410_GPB6, 1);
 			s3c2410_gpio_setpin(S3C2410_GPB6, 0);
 	}
 }
@@ -463,7 +464,7 @@ static void __init lbookv3_init_gpio(void)
 	s3c2410_gpio_cfgpin(S3C2410_GPC12, S3C2410_GPC12_OUTP);
 	s3c2410_gpio_cfgpin(S3C2410_GPC13, S3C2410_GPC13_OUTP);
 
-	s3c2410_gpio_setpin(S3C2410_GPB0, 1);
+	s3c2410_gpio_setpin(S3C2410_GPB0, 0);
 	s3c2410_gpio_setpin(S3C2410_GPB1, 0);
 	s3c2410_gpio_setpin(S3C2410_GPB5, 1);
 	s3c2410_gpio_setpin(S3C2410_GPB6, 1);
@@ -474,6 +475,39 @@ static void __init lbookv3_init_gpio(void)
 	s3c2410_gpio_setpin(S3C2410_GPC12, 0);
 
 	s3c2410_gpio_cfgpin(S3C2410_GPF4, S3C2410_GPF4_EINT4);
+
+	/* SIM card  interface */
+/*	s3c2410_gpio_cfgpin(S3C2410_GPB8, S3C2410_GPB8_OUTP);
+	s3c2410_gpio_cfgpin(S3C2410_GPB9, S3C2410_GPB9_OUTP);
+	s3c2410_gpio_cfgpin(S3C2410_GPC1, S3C2410_GPC1_OUTP);
+	s3c2410_gpio_cfgpin(S3C2410_GPC2, S3C2410_GPC2_OUTP);
+	s3c2410_gpio_cfgpin(S3C2410_GPH8, S3C2410_GPH8_OUTP);
+	s3c2410_gpio_cfgpin(S3C2410_GPH9, S3C2410_GPH9_OUTP);
+	s3c2410_gpio_cfgpin(S3C2410_GPH10, S3C2410_GPC10_OUTP);
+	s3c2410_gpio_setpin(S3C2410_GPB8, 1);
+	s3c2410_gpio_setpin(S3C2410_GPB9, 0);
+	s3c2410_gpio_setpin(S3C2410_GPC2, 0);
+	s3c2410_gpio_setpin(S3C2410_GPC1, 0);
+	s3c2410_gpio_setpin(S3C2410_GPH10, 0);
+*/
+
+	/* MP3 decoder interface */
+/*	s3c2410_gpio_cfgpin(S3C2410_GPC11, S3C2410_GPC11_OUTP);
+	s3c2410_gpio_cfgpin(S3C2410_GPD9, S3C2410_GPD9_OUTP);
+	s3c2410_gpio_cfgpin(S3C2410_GPC10, S3C2410_GPC10_OUTP);
+	s3c2410_gpio_setpin(S3C2410_GPC11, 0);
+*/
+
+	s3c2410_gpio_cfgpin(S3C2410_GPG12, S3C2410_GPG12_XMON);
+	s3c2410_gpio_cfgpin(S3C2410_GPG13, S3C2410_GPG13_nXPON);
+	s3c2410_gpio_cfgpin(S3C2410_GPG14, S3C2410_GPG14_YMON);
+	s3c2410_gpio_cfgpin(S3C2410_GPG15, S3C2410_GPG15_nYPON);
+
+	s3c2410_gpio_pullup(S3C2410_GPG12, 0);
+	s3c2410_gpio_pullup(S3C2410_GPG13, 1);
+	s3c2410_gpio_pullup(S3C2410_GPG14, 0);
+	s3c2410_gpio_pullup(S3C2410_GPG15, 1);
+
 }
 
 static void __init lbookv3_map_io(void)
