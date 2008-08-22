@@ -1,3 +1,9 @@
+linux-2.6 (2.6.25-9) unstable; urgency=low
+
+  * PM: Fix battery discharging issue
+
+ -- Yauhen Kharuzhy <jekhor@gmail.com>  Fri, 22 Aug 2008 17:43:49 +0300
+
 linux-2.6 (2.6.25-8) unstable; urgency=low
 
   * eink_apollofb: Increase picture loading speed
