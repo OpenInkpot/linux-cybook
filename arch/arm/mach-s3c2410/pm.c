@@ -34,6 +34,7 @@
 #include <mach/regs-gpio.h>
 #include <mach/h1940.h>
 
+#include <asm/plat-s3c/regs-adc.h>
 #include <asm/plat-s3c24xx/cpu.h>
 #include <asm/plat-s3c24xx/pm.h>
 
@@ -85,6 +86,47 @@ static void s3c2410_pm_prepare(void)
 	if ( machine_is_aml_m5900() )
 		s3c2410_gpio_setpin(S3C2410_GPF2, 1);
 
+	if (machine_is_lbook_v3()) {
+		unsigned long tmp;
+		unsigned long __iomem *adc_base;
+
+		adc_base = ioremap(0x58000000, 0x00100000);
+		tmp = __raw_readl(adc_base + S3C2410_ADCCON);
+		__raw_writel(tmp | S3C2410_ADCCON_STDBM, adc_base + S3C2410_ADCCON);
+		iounmap(adc_base);
+
+		s3c2410_gpio_cfgpin(S3C2410_GPA17, S3C2410_GPA17_CLE);
+		s3c2410_gpio_cfgpin(S3C2410_GPA18, S3C2410_GPA18_ALE);
+		s3c2410_gpio_cfgpin(S3C2410_GPA19, S3C2410_GPA19_nFWE);
+		s3c2410_gpio_cfgpin(S3C2410_GPA20, S3C2410_GPA20_nFRE);
+		s3c2410_gpio_cfgpin(S3C2410_GPA22, S3C2410_GPA22_nFCE);
+
+		s3c2410_gpio_setpin(S3C2410_GPA17, 0);
+		s3c2410_gpio_setpin(S3C2410_GPA18, 0);
+		s3c2410_gpio_setpin(S3C2410_GPA19, 0);
+		s3c2410_gpio_setpin(S3C2410_GPA20, 0);
+		s3c2410_gpio_setpin(S3C2410_GPA22, 1);
+
+		s3c2410_gpio_cfgpin(S3C2410_GPH4, S3C2410_GPH4_OUTP);
+		s3c2410_gpio_setpin(S3C2410_GPH4, 1);
+		s3c2410_gpio_pullup(S3C2410_GPH4, 0);
+
+		s3c2410_gpio_cfgpin(S3C2410_GPH5, S3C2410_GPH5_OUTP);
+		s3c2410_gpio_setpin(S3C2410_GPH5, 1);
+		s3c2410_gpio_pullup(S3C2410_GPH5, 0);
+
+		s3c2410_gpio_cfgpin(S3C2410_GPF7, S3C2410_GPF7_OUTP);
+		s3c2410_gpio_pullup(S3C2410_GPF7, 0);
+		s3c2410_gpio_setpin(S3C2410_GPF7, 1);
+
+		s3c2410_gpio_cfgpin(S3C2410_GPH6, S3C2410_GPH6_nRTS1);
+		s3c2410_gpio_cfgpin(S3C2410_GPH7, S3C2410_GPH7_nCTS1);
+
+		s3c2410_gpio_cfgpin(S3C2410_GPG1, S3C2410_GPG1_INP);
+		s3c2410_gpio_cfgpin(S3C2410_GPG2, S3C2410_GPG2_INP);
+
+		s3c2410_gpio_setpin(S3C2410_GPB0, 0);
+	}
 }
 
 static int s3c2410_pm_resume(struct sys_device *dev)
@@ -99,6 +141,13 @@ static int s3c2410_pm_resume(struct sys_device *dev)
 
 	if ( machine_is_aml_m5900() )
 		s3c2410_gpio_setpin(S3C2410_GPF2, 0);
+
+	if (machine_is_lbook_v3()) {
+		unsigned long __iomem *adc_base;
+		adc_base = ioremap(0x58000000, 0x00100000);
+		__raw_writel(__raw_readl(adc_base + S3C2410_ADCCON) ^ S3C2410_ADCCON_STDBM, adc_base + S3C2410_ADCCON);
+		iounmap(adc_base);
+	}
 
 	return 0;
 }
