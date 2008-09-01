@@ -590,7 +590,7 @@ static irqreturn_t s3cmci_irq_cd(int irq, void *dev_id)
 
 	dbg(host, dbg_irq, "card detect\n");
 
-	mmc_detect_change(host->mmc, 1);
+	mmc_detect_change(host->mmc, 50 * HZ / 1000);
 
 	return IRQ_HANDLED;
 }
