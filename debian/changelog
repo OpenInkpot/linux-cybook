@@ -1,3 +1,13 @@
+linux-2.6 (2.6.25-11) unstable; urgency=low
+
+  * s3cmci: Enable wakeup on card change
+  * s3cmci: Set delay for card change detect to 1 jiffie
+  * s3cmci: Reduce debug verbosity
+  * s3cmci: Change delay time in mmc_detect_change() to 50 ms
+  * config: enable MMC_UNSAFE_RESUME
+
+ -- Yauhen Kharuzhy <jekhor@gmail.com>  Tue, 02 Sep 2008 01:14:37 +0300
+
 linux-2.6 (2.6.25-10) unstable; urgency=low
 
   * s3c2410_udc: set USBSUSPND* bits in MISCCR before going to suspend
