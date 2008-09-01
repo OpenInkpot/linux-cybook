@@ -590,7 +590,7 @@ static irqreturn_t s3cmci_irq_cd(int irq, void *dev_id)
 
 	dbg(host, dbg_irq, "card detect\n");
 
-	mmc_detect_change(host->mmc, msecs_to_jiffies(500));
+	mmc_detect_change(host->mmc, 1);
 
 	return IRQ_HANDLED;
 }
@@ -1360,15 +1360,8 @@ static int __devexit s3cmci_remove(struct platform_device *pdev)
 
 	tasklet_disable(&host->pio_tasklet);
 	s3c2410_dma_free(S3CMCI_DMA, &s3cmci_dma_client);
-<<<<<<< HEAD:drivers/mmc/host/s3cmci.c
-
-	free_irq(host->irq, host);
-
-=======
 	disable_irq_wake(host->irq_cd);
- 	free_irq(host->irq_cd, host);
- 	free_irq(host->irq, host);
->>>>>>> s3cmci: Enable wakeup on card change:drivers/mmc/host/s3cmci.c
+	free_irq(host->irq, host);
 	iounmap(host->base);
 	release_mem_region(host->mem->start, RESSIZE(host->mem));
 
