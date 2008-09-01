@@ -1250,6 +1250,8 @@ static int __devinit s3cmci_probe(struct platform_device *pdev, int is2440)
 				    S3C2410_GPIO_INPUT);
 	}
 
+	enable_irq_wake(host->irq_cd);
+
 	if (host->pdata->gpio_wprotect)
 		s3c2410_gpio_cfgpin(host->pdata->gpio_wprotect,
 				    S3C2410_GPIO_INPUT);
@@ -1316,6 +1318,7 @@ static int __devinit s3cmci_probe(struct platform_device *pdev, int is2440)
 	clk_put(host->clk);
 
  probe_free_irq_cd:
+	disable_irq_wake(host->irq_cd);
 	if (host->irq_cd >= 0)
 		free_irq(host->irq_cd, host);
 
@@ -1357,9 +1360,15 @@ static int __devexit s3cmci_remove(struct platform_device *pdev)
 
 	tasklet_disable(&host->pio_tasklet);
 	s3c2410_dma_free(S3CMCI_DMA, &s3cmci_dma_client);
+<<<<<<< HEAD:drivers/mmc/host/s3cmci.c
 
 	free_irq(host->irq, host);
 
+=======
+	disable_irq_wake(host->irq_cd);
+ 	free_irq(host->irq_cd, host);
+ 	free_irq(host->irq, host);
+>>>>>>> s3cmci: Enable wakeup on card change:drivers/mmc/host/s3cmci.c
 	iounmap(host->base);
 	release_mem_region(host->mem->start, RESSIZE(host->mem));
 
