@@ -276,6 +276,7 @@ static int __init lbookv3_battery_init(void)
 	gpio_direction_input(LBOOK_V3_BAT_CHRG_PIN);	//nCHRG
 	gpio_direction_input(LBOOK_V3_BAT_LOWBAT_PIN);	//nLBO
 	gpio_direction_output(LBOOK_V3_BAT_ENABLE_CHRG_PIN, 1);	//PROG - auto charge, when pulled high
+	s3c2410_gpio_setpin(LBOOK_V3_BAT_ENABLE_CHRG_PIN, 1);
 
 	/* register battery to APM layer */
 	dev_info.battery_registered = 0;
