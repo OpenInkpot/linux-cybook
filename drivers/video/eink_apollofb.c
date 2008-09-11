@@ -36,8 +36,8 @@
 #include <linux/uaccess.h>
 #include <linux/device.h>
 
-#include <asm/arch/regs-gpio.h>
-#include <asm/hardware.h>
+#include <mach/regs-gpio.h>
+#include <mach/hardware.h>
 
 /* Display specific information */
 #define DPY_W 600

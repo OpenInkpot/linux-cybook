@@ -24,9 +24,9 @@
 #include <linux/input.h>
 
 #include <asm/gpio.h>
-#include <asm/hardware.h>
 #include <asm/io.h>
-#include <asm/arch/regs-gpio.h>
+#include <mach/hardware.h>
+#include <mach/regs-gpio.h>
 
 static int pullups[] = { 
 	S3C2410_GPG6, S3C2410_GPG7, S3C2410_GPG8, S3C2410_GPG9, S3C2410_GPG10,
@@ -174,7 +174,7 @@ static int __init lbookv3_keys_init(void)
 	lbookv3_keys_isr(0, input);
 
 	for (i = S3C2410_GPF0; i <= S3C2410_GPF2; i++) {
-		int irq = gpio_to_irq(i);
+		int irq = s3c2410_gpio_getirq(i);
 
 		s3c2410_gpio_cfgpin(i, S3C2410_GPIO_SFN2);
 		s3c2410_gpio_pullup(i, 1);
@@ -209,7 +209,7 @@ static int __init lbookv3_keys_init(void)
 fail_reg_irqs:
 fail_reg_eint6:
 	for (i = i - 1; i >= S3C2410_GPF0; i--)
-		free_irq(gpio_to_irq(i), input);
+		free_irq(s3c2410_gpio_getirq(i), input);
 
 	input_free_device(input);
 fail1:
@@ -225,7 +225,7 @@ static void __exit lbookv3_keys_exit(void)
 	free_irq(IRQ_EINT6, input);
 
 	for (i = S3C2410_GPF0; i <= S3C2410_GPF2; i++) {
-		int irq = gpio_to_irq(i);
+		int irq = s3c2410_gpio_getirq(i);
 
 		disable_irq_wake(irq);
 		free_irq(irq, input);

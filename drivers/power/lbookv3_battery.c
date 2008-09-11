@@ -19,17 +19,20 @@
 #include <linux/clk.h>
 #include <linux/err.h>
 
-#include <asm/arch/gpio.h>
-#include <asm/io.h>
-#include <asm/arch/io.h>
+#include <mach/regs-gpio.h>
+#include <mach/io.h>
 #include <asm/mach/map.h>
+#include <asm/io.h>
 
 /* connected to AO pin of LTC3455 */
 #define LBOOK_V3_BAT_LOWBAT_PIN		S3C2410_GPG2
+#define LBOOK_V3_BAT_LOWBAT_PIN_INP	S3C2410_GPG2_INP
 /* 1 --- connect the PROG pin of LTC3455 to resistor */
 #define LBOOK_V3_BAT_ENABLE_CHRG_PIN	S3C2410_GPC0
+#define LBOOK_V3_BAT_ENABLE_CHRG_PIN_OUTP	S3C2410_GPC0_OUTP
 /* connected to nCHRG pin of LTC3455 */
 #define LBOOK_V3_BAT_CHRG_PIN		S3C2410_GPG1
+#define LBOOK_V3_BAT_CHRG_PIN_INP		S3C2410_GPG1_INP
 
 struct lbookv3_battery_dev {
 	int battery_registered;
@@ -95,7 +98,7 @@ static int lbookv3_battery_get_capacity(struct power_supply *b)
 static int lbookv3_battery_charging (void)
 {
 	if (dev_info.battery_registered) {
-		return (gpio_get_value(LBOOK_V3_BAT_CHRG_PIN) == 0 ? 1 : 0);
+		return (s3c2410_gpio_getpin(LBOOK_V3_BAT_CHRG_PIN) == 0 ? 1 : 0);
 	} else {
 		printk(KERN_DEBUG "lbookv3_battery: cannot get status -> battery driver unregistered\n");
 		return 0;
@@ -106,7 +109,7 @@ static int lbookv3_battery_charging (void)
 static int lbookv3_usb_connected (void)
 {
 	if (dev_info.battery_registered) {
-		return gpio_get_value(S3C2410_GPF4);
+		return s3c2410_gpio_getpin(S3C2410_GPF4);
 	} else	{
 		printk(KERN_DEBUG "lbookv3_battery: cannot get status -> battery driver unregistered\n");
 		return 0;
@@ -272,10 +275,10 @@ static int __init lbookv3_battery_init(void)
 	if(ret != 0)
 		goto err1;
 
-	gpio_direction_input(S3C2410_GPF4);	//USB_pin
-	gpio_direction_input(LBOOK_V3_BAT_CHRG_PIN);	//nCHRG
-	gpio_direction_input(LBOOK_V3_BAT_LOWBAT_PIN);	//nLBO
-	gpio_direction_output(LBOOK_V3_BAT_ENABLE_CHRG_PIN, 1);	//PROG - auto charge, when pulled high
+	s3c2410_gpio_cfgpin(S3C2410_GPF4, S3C2410_GPF4_INP);	//USB_pin
+	s3c2410_gpio_cfgpin(LBOOK_V3_BAT_CHRG_PIN, LBOOK_V3_BAT_CHRG_PIN_INP);	//nCHRG
+	s3c2410_gpio_cfgpin(LBOOK_V3_BAT_LOWBAT_PIN, LBOOK_V3_BAT_LOWBAT_PIN_INP);	//nLBO
+	s3c2410_gpio_cfgpin(LBOOK_V3_BAT_ENABLE_CHRG_PIN, LBOOK_V3_BAT_ENABLE_CHRG_PIN_OUTP);	//PROG - auto charge, when pulled high
 	s3c2410_gpio_setpin(LBOOK_V3_BAT_ENABLE_CHRG_PIN, 1);
 
 	/* register battery to APM layer */

@@ -50,16 +50,15 @@
 #include <asm/mach/map.h>
 #include <asm/mach/irq.h>
 
-#include <asm/hardware.h>
+#include <mach/hardware.h>
 #include <asm/io.h>
 #include <asm/irq.h>
 #include <asm/mach-types.h>
 #include <asm/delay.h>
 
-#include <asm/arch/leds-gpio.h>
-#include <asm/arch/regs-gpio.h>
-#include <asm/arch/regs-clock.h>
-#include <asm/arch/mci.h>
+#include <mach/leds-gpio.h>
+#include <mach/regs-gpio.h>
+#include <mach/regs-clock.h>
 
 #include <asm/plat-s3c/regs-serial.h>
 #include <asm/plat-s3c/nand.h>
@@ -68,6 +67,7 @@
 #include <asm/plat-s3c24xx/cpu.h>
 #include <asm/plat-s3c24xx/udc.h>
 #include <asm/plat-s3c24xx/pm.h>
+#include <asm/plat-s3c24xx/mci.h>
 
 
 #include <asm/plat-s3c24xx/common-smdk.h>
@@ -428,8 +428,8 @@ static struct platform_device *lbookv3_devices[] __initdata = {
 	&s3c_device_adc,
 	&s3c_device_hsmmc,
 	&s3c_device_spi0,
-	&s3c_device_timer0,
 	&s3c_device_sdi,
+	&s3c_device_timer[0],
 	&lbookv3_led_red,
 	&lbookv3_led_green,
 	&lbookv3_device_nor,
