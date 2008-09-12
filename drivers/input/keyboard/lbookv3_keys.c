@@ -59,7 +59,7 @@ static irqreturn_t lbookv3_powerkey_isr(int irq, void *dev_id)
 
 	s3c2410_gpio_cfgpin(S3C2410_GPF6, S3C2410_GPF6_INP);
 
-	if (gpio_get_value(S3C2410_GPF6))
+	if (s3c2410_gpio_getpin(S3C2410_GPF6))
 		input_event(input, EV_KEY, KEY_POWER, 0);
 	else
 		input_event(input, EV_KEY, KEY_POWER, 1);
@@ -98,13 +98,13 @@ static irqreturn_t lbookv3_keys_isr(int irq, void *dev_id)
 
 		for (j = 0; j < ARRAY_SIZE(pullups); j++)
 			do {
-				gpio_set_value(pullups[j], 1);
+				s3c2410_gpio_setpin(pullups[j], 1);
 			} while (!gpio_get_value(pullups[j]));
 
 		mdelay(10);
 
 		for (j = 0; j < ARRAY_SIZE(pullups); j++) {
-			gpio_set_value(pullups[j], 0);
+			s3c2410_gpio_setpin(pullups[j], 0);
 			udelay(10);
 
 			if (!gpio_get_value(i)) {
@@ -116,8 +116,8 @@ static irqreturn_t lbookv3_keys_isr(int irq, void *dev_id)
 		}
 
 		for (j = 0; j < ARRAY_SIZE(pullups); j++)
-			while (gpio_get_value(pullups[j]))
-				gpio_set_value(pullups[j], 0);
+			while (s3c2410_gpio_getpin(pullups[j]))
+				s3c2410_gpio_setpin(pullups[j], 0);
 
 		udelay(10);
 	}
@@ -136,7 +136,7 @@ static int __init lbookv3_keys_init(void)
 
 	for (i = 0; i < ARRAY_SIZE(pullups); i++) {
 		s3c2410_gpio_cfgpin(pullups[i], S3C2410_GPIO_OUTPUT);
-		gpio_set_value(pullups[i], 0);
+		s3c2410_gpio_setpin(pullups[i], 0);
 	}
 
 	input = input_allocate_device();
