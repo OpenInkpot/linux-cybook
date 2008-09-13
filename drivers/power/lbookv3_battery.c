@@ -77,7 +77,7 @@ static int lbookv3_battery_get_voltage(struct power_supply *b)
 			printk(KERN_DEBUG "lbookv3_battery: cannot get voltage -> ADC timeout\n");
 			return 0;
 		}
-		printk(KERN_DEBUG "lbookv3_battery: adc read %d\n", adc_data);
+
 		dev_info.current_voltage = (adc_data * 5861) / 1000;
 		return dev_info.current_voltage;
 	} else {
