@@ -94,7 +94,7 @@ static struct s3c24xx_led_platdata lbookv3_pdata_led_red = {
 	.gpio		= S3C2410_GPC5,
 	.flags		= 0,
 	.name		= "led:red",
-//	.def_trigger	= "timer",
+	.def_trigger	= "mmc0",
 };
 
 static struct s3c24xx_led_platdata lbookv3_pdata_led_green = {
