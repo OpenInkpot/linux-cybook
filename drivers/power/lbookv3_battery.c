@@ -50,7 +50,8 @@ static void (*apm_get_power_status_orig)(struct apm_power_info *info);
 
 #define ADC_BATTERY_CH 1
 #define LBOOK_V3_MAX_VOLT 4050
-#define LBOOK_V3_MIN_VOLT 3000
+#define LBOOK_V3_MIN_VOLT 3150
+#define LBOOK_V3_5PERC_VOLT 3540
 
 static unsigned int adc_get_val (unsigned int ch)
 {
@@ -77,7 +78,7 @@ static int lbookv3_battery_get_voltage(struct power_supply *b)
 			return 0;
 		}
 		printk(KERN_DEBUG "lbookv3_battery: adc read %d\n", adc_data);
-		dev_info.current_voltage = (adc_data * 1750 * 3300) / 1024000;
+		dev_info.current_voltage = (adc_data * 5861) / 1000;
 		return dev_info.current_voltage;
 	} else {
 		printk(KERN_DEBUG "lbookv3_battery: cannot get voltage -> battery driver unregistered\n");
@@ -87,8 +88,16 @@ static int lbookv3_battery_get_voltage(struct power_supply *b)
 
 static int lbookv3_battery_get_capacity(struct power_supply *b)
 {
+	unsigned int voltage;
+
 	if (dev_info.battery_registered) {
-		return ((lbookv3_battery_get_voltage(b)-LBOOK_V3_MIN_VOLT) * 100)/(LBOOK_V3_MAX_VOLT-LBOOK_V3_MIN_VOLT);
+		voltage = lbookv3_battery_get_voltage(b);
+
+		if (voltage > LBOOK_V3_5PERC_VOLT)
+			return ((voltage - LBOOK_V3_5PERC_VOLT) * 95)/(LBOOK_V3_MAX_VOLT-LBOOK_V3_5PERC_VOLT);
+		else
+			return ((voltage - LBOOK_V3_MIN_VOLT) * 5) / (LBOOK_V3_MAX_VOLT - LBOOK_V3_MIN_VOLT);
+
 	} else {
 		printk(KERN_DEBUG "lbookv3_battery: cannot get capacity -> battery driver unregistered\n");
 		return 0;
