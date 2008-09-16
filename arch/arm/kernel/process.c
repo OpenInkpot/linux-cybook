@@ -26,8 +26,10 @@
 #include <linux/cpu.h>
 #include <linux/elfcore.h>
 #include <linux/pm.h>
+#include <linux/suspend.h>
 #include <linux/tick.h>
 #include <linux/utsname.h>
+#include <linux/kernel_stat.h>
 
 #include <asm/leds.h>
 #include <asm/processor.h>
@@ -35,6 +37,8 @@
 #include <asm/thread_notify.h>
 #include <asm/uaccess.h>
 #include <asm/mach/time.h>
+#include <asm/hardware.h>
+#include <asm/arch/regs-gpio.h>
 
 static const char *processor_modes[] = {
   "USER_26", "FIQ_26" , "IRQ_26" , "SVC_26" , "UK4_26" , "UK5_26" , "UK6_26" , "UK7_26" ,
@@ -122,6 +126,24 @@ EXPORT_SYMBOL(pm_power_off);
 void (*arm_pm_restart)(char str) = arm_machine_restart;
 EXPORT_SYMBOL_GPL(arm_pm_restart);
 
+#ifdef CONFIG_AUTOSUSPEND_ENABLED
+
+#define AUTOSUSPEND_TIMEOUT (1 * HZ)
+
+static unsigned long sleep_idle_time = AUTOSUSPEND_TIMEOUT;
+static struct delayed_work suspend_worktask;
+
+static int lbookv3_usb_connected(void)
+{
+		return s3c2410_gpio_getpin(S3C2410_GPF4);
+}
+
+static void do_idle_suspend(struct work_struct *work)
+{
+	pm_suspend(PM_SUSPEND_MEM);
+	sleep_idle_time = jiffies + AUTOSUSPEND_TIMEOUT;
+}
+#endif
 
 /*
  * This is our default idle handler.  We need to disable
@@ -129,6 +151,23 @@ EXPORT_SYMBOL_GPL(arm_pm_restart);
  */
 static void default_idle(void)
 {
+#ifdef CONFIG_AUTOSUSPEND_ENABLED
+	static u64 last_cpustat_procs = 0;
+	u64 curr_cpustat_procs = kstat_this_cpu.cpustat.user + kstat_this_cpu.cpustat.system;
+
+
+	if (curr_cpustat_procs > last_cpustat_procs)
+		sleep_idle_time = jiffies + AUTOSUSPEND_TIMEOUT;
+
+	last_cpustat_procs = curr_cpustat_procs;
+
+	if (time_after(jiffies, sleep_idle_time) && !lbookv3_usb_connected()) {
+		INIT_DELAYED_WORK(&suspend_worktask, do_idle_suspend);
+		schedule_delayed_work(&suspend_worktask, 1);
+		sleep_idle_time = jiffies + AUTOSUSPEND_TIMEOUT;
+	}
+#endif
+
 	if (hlt_counter)
 		cpu_relax();
 	else {
