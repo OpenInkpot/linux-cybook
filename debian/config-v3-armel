@@ -1,7 +1,7 @@
 #
 # Automatically generated make config: don't edit
-# Linux kernel version: 2.6.25.10
-# Fri Aug 22 22:14:44 2008
+# Linux kernel version: 2.6.25-v3-armel
+# Tue Sep 16 16:56:57 2008
 #
 CONFIG_ARM=y
 CONFIG_SYS_SUPPORTS_APM_EMULATION=y
@@ -306,6 +306,7 @@ CONFIG_BINFMT_ELF=y
 #
 # Power management options
 #
+CONFIG_AUTOSUSPEND_ENABLE=y
 CONFIG_PM=y
 # CONFIG_PM_LEGACY is not set
 # CONFIG_PM_DEBUG is not set
