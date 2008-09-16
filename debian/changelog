@@ -1,3 +1,15 @@
+linux-2.6 (2.6.25-12) unstable; urgency=low
+
+  * lbookv3_battery: Add enabling charge on load (not needed, but...)
+  * LBOOKV3: assign mmc0 trigger to red LED by default
+  * lbookv3_battery: Fix constants in voltage&capacity calculation
+  * lbookv3_battery: Remove debug output on ADC read
+  * s3c2410_udc: Enable device wakeup on USB connect
+  * First, dirty, version of autosuspend on idle feature
+  * New configs (enable autosuspend)
+
+ -- Yauhen Kharuzhy <jekhor@gmail.com>  Tue, 16 Sep 2008 17:01:39 +0300
+
 linux-2.6 (2.6.25-11) unstable; urgency=low
 
   * s3cmci: Enable wakeup on card change
