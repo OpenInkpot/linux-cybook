@@ -33,12 +33,6 @@
 #define LBOOK_V3_BAT_CHRG_PIN		S3C2410_GPG1
 #define LBOOK_V3_BAT_CHRG_PIN_INP		S3C2410_GPG1_INP
 
-struct lbookv3_battery_dev {
-	int battery_registered;
-	int current_voltage;
-};
-
-struct lbookv3_battery_dev dev_info;
 static void __iomem *adc_base;
 static struct clk* adc_clk;
 
@@ -53,8 +47,8 @@ static unsigned int adc_get_val (unsigned int ch)
 	ch &= 0x07;
 	ch <<= 3;
 	__raw_writel(0x4c41 | ch, adc_base);
-	while(((__raw_readl(adc_base) & 0x8000) == 0) && (--wait != 0));
-	if(wait == 0)
+	while (((__raw_readl(adc_base) & 0x8000) == 0) && (--wait != 0));
+	if (wait == 0)
 		return 0;
 	else
 		return (__raw_readl(adc_base+0xc) & 0x3ff);
@@ -63,60 +57,37 @@ static unsigned int adc_get_val (unsigned int ch)
 static int lbookv3_battery_get_voltage(struct power_supply *b)
 {
 	unsigned int adc_data;
-	if (dev_info.battery_registered)
-	{
-		adc_data = adc_get_val(ADC_BATTERY_CH);
-		if(adc_data == 0)
-		{
-			printk(KERN_DEBUG "lbookv3_battery: cannot get voltage -> ADC timeout\n");
-			return 0;
-		}
 
-		dev_info.current_voltage = (adc_data * 5861) / 1000;
-		return dev_info.current_voltage;
-	} else {
-		printk(KERN_DEBUG "lbookv3_battery: cannot get voltage -> battery driver unregistered\n");
+	adc_data = adc_get_val(ADC_BATTERY_CH);
+	if (adc_data == 0) {
+		printk(KERN_DEBUG "lbookv3_battery: cannot get voltage -> ADC timeout\n");
 		return 0;
 	}
+
+	return (adc_data * 5861) / 1000;
 }
 
 static int lbookv3_battery_get_capacity(struct power_supply *b)
 {
 	unsigned int voltage;
 
-	if (dev_info.battery_registered) {
-		voltage = lbookv3_battery_get_voltage(b);
+	voltage = lbookv3_battery_get_voltage(b);
 
-		if (voltage > LBOOK_V3_5PERC_VOLT)
-			return ((voltage - LBOOK_V3_5PERC_VOLT) * 95)/(LBOOK_V3_MAX_VOLT-LBOOK_V3_5PERC_VOLT);
-		else
-			return ((voltage - LBOOK_V3_MIN_VOLT) * 5) / (LBOOK_V3_MAX_VOLT - LBOOK_V3_MIN_VOLT);
+	if (voltage > LBOOK_V3_5PERC_VOLT)
+		return ((voltage - LBOOK_V3_5PERC_VOLT) * 95)/(LBOOK_V3_MAX_VOLT-LBOOK_V3_5PERC_VOLT);
+	else
+		return ((voltage - LBOOK_V3_MIN_VOLT) * 5) / (LBOOK_V3_MAX_VOLT - LBOOK_V3_MIN_VOLT);
 
-	} else {
-		printk(KERN_DEBUG "lbookv3_battery: cannot get capacity -> battery driver unregistered\n");
-		return 0;
-	}
 }
 
 static int lbookv3_battery_charging (void)
 {
-	if (dev_info.battery_registered) {
-		return (s3c2410_gpio_getpin(LBOOK_V3_BAT_CHRG_PIN) == 0 ? 1 : 0);
-	} else {
-		printk(KERN_DEBUG "lbookv3_battery: cannot get status -> battery driver unregistered\n");
-		return 0;
-	}
-
+	return s3c2410_gpio_getpin(LBOOK_V3_BAT_CHRG_PIN) == 0 ? 1 : 0;
 }
 
 static int lbookv3_usb_connected (void)
 {
-	if (dev_info.battery_registered) {
-		return s3c2410_gpio_getpin(S3C2410_GPF4) ? 1 : 0;
-	} else	{
-		printk(KERN_DEBUG "lbookv3_battery: cannot get status -> battery driver unregistered\n");
-		return 0;
-	}
+	return s3c2410_gpio_getpin(S3C2410_GPF4) ? 1 : 0;
 }
 
 static int lbookv3_battery_get_status(struct power_supply *b)
@@ -145,27 +116,26 @@ static int lbookv3_battery_get_property	(struct power_supply *b,
 		enum power_supply_property psp,
 		union power_supply_propval *val)
 {
-	switch (psp) 
-	{
-		case POWER_SUPPLY_PROP_VOLTAGE_MAX_DESIGN:
-			val->intval = LBOOK_V3_MAX_VOLT;
-			break;
-		case POWER_SUPPLY_PROP_VOLTAGE_MIN_DESIGN:
-			val->intval = LBOOK_V3_MIN_VOLT;
-			break;
-		case POWER_SUPPLY_PROP_CHARGE_NOW:
-			val->intval = lbookv3_battery_get_capacity(b);
-			if (val->intval > 100)
-				val->intval = 100;
-			break;
-		case POWER_SUPPLY_PROP_VOLTAGE_NOW:
-			val->intval = lbookv3_battery_get_voltage(b);
-			break;
-		case POWER_SUPPLY_PROP_STATUS:
-			val->intval = lbookv3_battery_get_status(b);
-			break;
-		default:
-			break;
+	switch (psp) {
+	case POWER_SUPPLY_PROP_VOLTAGE_MAX_DESIGN:
+		val->intval = LBOOK_V3_MAX_VOLT;
+		break;
+	case POWER_SUPPLY_PROP_VOLTAGE_MIN_DESIGN:
+		val->intval = LBOOK_V3_MIN_VOLT;
+		break;
+	case POWER_SUPPLY_PROP_CHARGE_NOW:
+		val->intval = lbookv3_battery_get_capacity(b);
+		if (val->intval > 100)
+			val->intval = 100;
+		break;
+	case POWER_SUPPLY_PROP_VOLTAGE_NOW:
+		val->intval = lbookv3_battery_get_voltage(b);
+		break;
+	case POWER_SUPPLY_PROP_STATUS:
+		val->intval = lbookv3_battery_get_status(b);
+		break;
+	default:
+		break;
 	}
 	return 0;
 }
@@ -174,8 +144,7 @@ static int lbookv3_usb_get_property (struct power_supply *b,
 		enum power_supply_property psp,
 		union power_supply_propval *val)
 {
-	switch (psp)
-	{
+	switch (psp) {
 	case POWER_SUPPLY_PROP_ONLINE:
 		val->intval = lbookv3_usb_connected();
 		break;
@@ -234,7 +203,7 @@ static int s3c2410_adc_init(void)
 	__raw_writel(0x00, adc_base + 0x04);
 	__raw_writel(0x00, adc_base + 0x08);
 	return 0;
-err2:	
+err2:
 	clk_put(adc_clk);
 err1:
 	return err;
@@ -243,31 +212,8 @@ err1:
 
 static int lbookv3_battery_probe(struct platform_device *dev)
 {
-	return 0;
-}
-
-static int lbookv3_battery_remove(struct platform_device *dev)
-{
-	return 0;
-	/*
-#if defined(CONFIG_APM_EMULATION) || defined(CONFIG_APM_MODULE)
-apm_get_power_status = apm_get_power_status_orig;
-#endif
-*/
-}
-
-static struct platform_driver lbookv3_battery_driver = {
-	.driver = 
-	{
-		.name = "lbookv3-battery",
-	},
-	.probe = lbookv3_battery_probe,
-	.remove = lbookv3_battery_remove,
-};
-
-static int __init lbookv3_battery_init(void)
-{
 	int ret;
+
 	ret = s3c2410_adc_init();
 	if(ret != 0)
 		goto err1;
@@ -278,18 +224,11 @@ static int __init lbookv3_battery_init(void)
 	s3c2410_gpio_cfgpin(LBOOK_V3_BAT_ENABLE_CHRG_PIN, LBOOK_V3_BAT_ENABLE_CHRG_PIN_OUTP);	//PROG - auto charge, when pulled high
 	s3c2410_gpio_setpin(LBOOK_V3_BAT_ENABLE_CHRG_PIN, 1);
 
-	/* register battery to APM layer */
-	dev_info.battery_registered = 0;
 	ret = power_supply_register(NULL, &lbookv3_battery);
 	if(ret != 0)
 	{
 		printk(KERN_ERR "lbookv3_battery: could not register battery class\n");
 		goto err2;
-	}
-	else 
-	{
-		dev_info.battery_registered = 1;
-		printk(KERN_DEBUG "blbookv3_battery: battery registered\n");
 	}
 
 	ret = power_supply_register(NULL, &lbookv3_usb);
@@ -298,14 +237,8 @@ static int __init lbookv3_battery_init(void)
 		goto err_reg_usb;
 	}
 
-	ret = platform_driver_register(&lbookv3_battery_driver);
-	if(ret != 0)
-	{
-		printk(KERN_ERR "lbookv3_battery: could not register battery platform driver\n");
-		goto err3;
-	}
 	return ret;
-err3:
+
 	power_supply_unregister(&lbookv3_usb);
 err_reg_usb:
 	power_supply_unregister(&lbookv3_battery);
@@ -313,16 +246,35 @@ err2:
 	clk_disable(adc_clk);
 	clk_put(adc_clk);
 err1:
-	return ret;
+	return 0;
+}
+
+static int lbookv3_battery_remove(struct platform_device *dev)
+{
+	power_supply_unregister(&lbookv3_usb);
+	power_supply_unregister(&lbookv3_battery);
+	clk_disable(adc_clk);
+	clk_put(adc_clk);
+
+	return 0;
+}
+
+static struct platform_driver lbookv3_battery_driver = {
+	.driver = {
+		.name = "lbookv3-battery",
+	},
+	.probe = lbookv3_battery_probe,
+	.remove = lbookv3_battery_remove,
+};
+
+static int __init lbookv3_battery_init(void)
+{
+	return platform_driver_register(&lbookv3_battery_driver);
 }
 
 static void __exit lbookv3_battery_exit(void)
 {
 	platform_driver_unregister(&lbookv3_battery_driver);
-	power_supply_unregister(&lbookv3_usb);
-	power_supply_unregister(&lbookv3_battery);
-	clk_disable(adc_clk);
-	clk_put(adc_clk);
 }
 
 module_init(lbookv3_battery_init);
