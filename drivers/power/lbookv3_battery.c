@@ -15,7 +15,6 @@
 #include <linux/module.h>
 #include <linux/platform_device.h>
 #include <linux/power_supply.h>
-#include <linux/apm-emulation.h>
 #include <linux/clk.h>
 #include <linux/err.h>
 
@@ -42,11 +41,6 @@ struct lbookv3_battery_dev {
 struct lbookv3_battery_dev dev_info;
 static void __iomem *adc_base;
 static struct clk* adc_clk;
-
-#if defined(CONFIG_APM_EMULATION) || defined(CONFIG_APM_MODULE)
-/* original APM hook */
-static void (*apm_get_power_status_orig)(struct apm_power_info *info);
-#endif
 
 #define ADC_BATTERY_CH 1
 #define LBOOK_V3_MAX_VOLT 4050
@@ -219,43 +213,6 @@ struct power_supply lbookv3_usb = {
 
 };
 
-#if defined(CONFIG_APM_EMULATION) || defined(CONFIG_APM_MODULE)
-/* APM status query callback implementation */
-static void lbookv3_apm_get_power_status(struct apm_power_info *info)
-{
-	int min, max, curr, percent;
-
-	curr = lbookv3_battery_get_voltage(&lbookv3_battery);
-	min  = LBOOK_V3_MIN_VOLT;
-	max  = LBOOK_V3_MAX_VOLT;
-
-	curr = curr - min;
-	if (curr < 0) curr = 0;
-	max = max - min;
-
-	percent = curr*100/max;
-
-	info->battery_life = percent;
-
-	info->ac_line_status = lbookv3_usb_connected() ? APM_AC_ONLINE : APM_AC_OFFLINE;
-
-	if (lbookv3_battery_charging())
-		info->battery_status = APM_BATTERY_STATUS_CHARGING;
-	else
-	{
-		if (percent > 50)
-			info->battery_status = APM_BATTERY_STATUS_HIGH;
-		else if (percent < 5)
-			info->battery_status = APM_BATTERY_STATUS_CRITICAL;
-		else
-			info->battery_status = APM_BATTERY_STATUS_LOW;
-	}
-
-	info->time = 0;
-	info->units = APM_UNITS_UNKNOWN;
-}
-#endif
-
 static int s3c2410_adc_init(void)
 {
 	int err = 0;
@@ -340,10 +297,7 @@ static int __init lbookv3_battery_init(void)
 		printk(KERN_ERR "lbookv3_battery: could not register USB power supply\n");
 		goto err_reg_usb;
 	}
-#if defined(CONFIG_APM_EMULATION) || defined(CONFIG_APM_MODULE)
-	apm_get_power_status_orig = apm_get_power_status;
-	apm_get_power_status = lbookv3_apm_get_power_status;
-#endif
+
 	ret = platform_driver_register(&lbookv3_battery_driver);
 	if(ret != 0)
 	{
@@ -352,9 +306,6 @@ static int __init lbookv3_battery_init(void)
 	}
 	return ret;
 err3:
-#if defined(CONFIG_APM_EMULATION) || defined(CONFIG_APM_MODULE)
-	apm_get_power_status = apm_get_power_status_orig;
-#endif
 	power_supply_unregister(&lbookv3_usb);
 err_reg_usb:
 	power_supply_unregister(&lbookv3_battery);
@@ -367,9 +318,6 @@ err1:
 
 static void __exit lbookv3_battery_exit(void)
 {
-#if defined(CONFIG_APM_EMULATION) || defined(CONFIG_APM_MODULE)
-	apm_get_power_status = apm_get_power_status_orig;
-#endif
 	platform_driver_unregister(&lbookv3_battery_driver);
 	power_supply_unregister(&lbookv3_usb);
 	power_supply_unregister(&lbookv3_battery);
