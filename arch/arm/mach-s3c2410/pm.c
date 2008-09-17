@@ -122,8 +122,8 @@ static void s3c2410_pm_prepare(void)
 		s3c2410_gpio_cfgpin(S3C2410_GPH6, S3C2410_GPH6_nRTS1);
 		s3c2410_gpio_cfgpin(S3C2410_GPH7, S3C2410_GPH7_nCTS1);
 
-		s3c2410_gpio_cfgpin(S3C2410_GPG1, S3C2410_GPG1_INP);
-		s3c2410_gpio_cfgpin(S3C2410_GPG2, S3C2410_GPG2_INP);
+//		s3c2410_gpio_cfgpin(S3C2410_GPG1, S3C2410_GPG1_INP);
+//		s3c2410_gpio_cfgpin(S3C2410_GPG2, S3C2410_GPG2_INP);
 
 		s3c2410_gpio_setpin(S3C2410_GPB0, 0);
 	}
