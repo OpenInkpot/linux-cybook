@@ -126,22 +126,15 @@ EXPORT_SYMBOL(pm_power_off);
 void (*arm_pm_restart)(char str) = arm_machine_restart;
 EXPORT_SYMBOL_GPL(arm_pm_restart);
 
-#ifdef CONFIG_AUTOSUSPEND_ENABLED
+#ifdef CONFIG_PM_AUTOSUSPEND
 
-#define AUTOSUSPEND_TIMEOUT (1 * HZ)
-
-static unsigned long sleep_idle_time = AUTOSUSPEND_TIMEOUT;
+static unsigned long sleep_idle_time = HZ;
 static struct delayed_work suspend_worktask;
-
-static int lbookv3_usb_connected(void)
-{
-		return s3c2410_gpio_getpin(S3C2410_GPF4);
-}
 
 static void do_idle_suspend(struct work_struct *work)
 {
 	pm_suspend(PM_SUSPEND_MEM);
-	sleep_idle_time = jiffies + AUTOSUSPEND_TIMEOUT;
+	sleep_idle_time = jiffies + pm_autosuspend_timeout;
 }
 #endif
 
@@ -151,20 +144,22 @@ static void do_idle_suspend(struct work_struct *work)
  */
 static void default_idle(void)
 {
-#ifdef CONFIG_AUTOSUSPEND_ENABLED
+#ifdef CONFIG_PM_AUTOSUSPEND
 	static u64 last_cpustat_procs = 0;
 	u64 curr_cpustat_procs = kstat_this_cpu.cpustat.user + kstat_this_cpu.cpustat.system;
 
 
-	if (curr_cpustat_procs > last_cpustat_procs)
-		sleep_idle_time = jiffies + AUTOSUSPEND_TIMEOUT;
+	if (pm_autosuspend_enabled) {
+		if (curr_cpustat_procs > last_cpustat_procs)
+			sleep_idle_time = jiffies + pm_autosuspend_timeout;
 
-	last_cpustat_procs = curr_cpustat_procs;
+		last_cpustat_procs = curr_cpustat_procs;
 
-	if (time_after(jiffies, sleep_idle_time) && !lbookv3_usb_connected()) {
-		INIT_DELAYED_WORK(&suspend_worktask, do_idle_suspend);
-		schedule_delayed_work(&suspend_worktask, 1);
-		sleep_idle_time = jiffies + AUTOSUSPEND_TIMEOUT;
+		if (time_after(jiffies, sleep_idle_time)) {
+			INIT_DELAYED_WORK(&suspend_worktask, do_idle_suspend);
+			schedule_delayed_work(&suspend_worktask, 1);
+			sleep_idle_time = jiffies + pm_autosuspend_timeout;
+		}
 	}
 #endif
 

@@ -351,6 +351,11 @@ struct dev_pm_info {
 #endif
 };
 
+#ifdef CONFIG_PM_AUTOSUSPEND
+extern int pm_autosuspend_enabled;
+extern unsigned int pm_autosuspend_timeout;
+#endif
+
 /*
  * The PM_EVENT_ messages are also used by drivers implementing the legacy
  * suspend framework, based on the ->suspend() and ->resume() callbacks common

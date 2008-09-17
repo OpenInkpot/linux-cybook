@@ -1143,13 +1143,6 @@ endmenu
 
 menu "Power management options"
 
-config AUTOSUSPEND_ENABLED
-	bool "Enable autosuspend on idle"
-	depends on ARCH_LBOOK_V3
-	default n
-	help
-	  Enable autosuspend on idle support
-
 source "kernel/power/Kconfig"
 
 config ARCH_SUSPEND_POSSIBLE

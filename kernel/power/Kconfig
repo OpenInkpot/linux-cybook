@@ -105,6 +105,13 @@ config PM_TEST_SUSPEND
 	You probably want to have your system's RTC driver statically
 	linked, ensuring that it's available when this test runs.
 
+config PM_AUTOSUSPEND
+	bool "Enable autosuspend on idle"
+	depends on SUSPEND
+	default n
+	help
+	  Enable automatic suspend to RAM on idle
+
 config SUSPEND_FREEZER
 	bool "Enable freezer for suspend to RAM/standby" \
 		if ARCH_WANTS_FREEZER_CONTROL || BROKEN

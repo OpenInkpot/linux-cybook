@@ -557,6 +557,56 @@ pm_trace_store(struct kobject *kobj, struct kobj_attribute *attr,
 power_attr(pm_trace);
 #endif /* CONFIG_PM_TRACE */
 
+#ifdef CONFIG_PM_AUTOSUSPEND
+int pm_autosuspend_enabled = 0;
+EXPORT_SYMBOL(pm_autosuspend_enabled);
+
+static ssize_t autosuspend_show(struct kobject *kobj, struct kobj_attribute *attr,
+			     char *buf)
+{
+	return sprintf(buf, "%d\n", pm_autosuspend_enabled);
+}
+
+static ssize_t
+autosuspend_store(struct kobject *kobj, struct kobj_attribute *attr,
+	       const char *buf, size_t n)
+{
+	int val;
+
+	if (sscanf(buf, "%d", &val) == 1) {
+		pm_autosuspend_enabled = !!val;
+		return n;
+	}
+	return -EINVAL;
+}
+
+power_attr(autosuspend);
+
+unsigned int pm_autosuspend_timeout = HZ;
+EXPORT_SYMBOL(pm_autosuspend_timeout);
+
+static ssize_t autosuspend_timeout_show(struct kobject *kobj, struct kobj_attribute *attr,
+			     char *buf)
+{
+	return sprintf(buf, "%d\n", pm_autosuspend_timeout * 1000 / HZ);
+}
+
+static ssize_t
+autosuspend_timeout_store(struct kobject *kobj, struct kobj_attribute *attr,
+	       const char *buf, size_t n)
+{
+	unsigned int val;
+
+	if (sscanf(buf, "%u", &val) == 1) {
+		pm_autosuspend_timeout = val * HZ / 1000;
+		return n;
+	}
+	return -EINVAL;
+}
+
+power_attr(autosuspend_timeout);
+#endif
+
 static struct attribute * g[] = {
 	&state_attr.attr,
 #ifdef CONFIG_PM_TRACE
@@ -564,6 +614,10 @@ static struct attribute * g[] = {
 #endif
 #if defined(CONFIG_PM_SLEEP) && defined(CONFIG_PM_DEBUG)
 	&pm_test_attr.attr,
+#endif
+#ifdef CONFIG_PM_AUTOSUSPEND
+	&autosuspend_attr.attr,
+	&autosuspend_timeout_attr.attr,
 #endif
 	NULL,
 };
