@@ -118,7 +118,7 @@ static int lbookv3_battery_charging (void)
 static int lbookv3_usb_connected (void)
 {
 	if (dev_info.battery_registered) {
-		return s3c2410_gpio_getpin(S3C2410_GPF4);
+		return s3c2410_gpio_getpin(S3C2410_GPF4) ? 1 : 0;
 	} else	{
 		printk(KERN_DEBUG "lbookv3_battery: cannot get status -> battery driver unregistered\n");
 		return 0;
@@ -159,14 +159,10 @@ static int lbookv3_battery_get_property	(struct power_supply *b,
 		case POWER_SUPPLY_PROP_VOLTAGE_MIN_DESIGN:
 			val->intval = LBOOK_V3_MIN_VOLT;
 			break;
-		case POWER_SUPPLY_PROP_CHARGE_FULL_DESIGN:
-			val->intval = 100;
-			break;
-		case POWER_SUPPLY_PROP_CHARGE_EMPTY_DESIGN:
-			val->intval = 0;
-			break;
 		case POWER_SUPPLY_PROP_CHARGE_NOW:
 			val->intval = lbookv3_battery_get_capacity(b);
+			if (val->intval > 100)
+				val->intval = 100;
 			break;
 		case POWER_SUPPLY_PROP_VOLTAGE_NOW:
 			val->intval = lbookv3_battery_get_voltage(b);
@@ -180,12 +176,47 @@ static int lbookv3_battery_get_property	(struct power_supply *b,
 	return 0;
 }
 
-struct power_supply lbookv3_battery = 
+static int lbookv3_usb_get_property (struct power_supply *b,
+		enum power_supply_property psp,
+		union power_supply_propval *val)
 {
-	.name			= "lbookv3_battery",
+	switch (psp)
+	{
+	case POWER_SUPPLY_PROP_ONLINE:
+		val->intval = lbookv3_usb_connected();
+		break;
+	default:
+		return -EINVAL;
+	}
+	return 0;
+}
+
+
+struct power_supply lbookv3_battery =
+{
+	.name		= "lbookv3_battery",
 	.get_property   = lbookv3_battery_get_property,
 	.properties     = lbookv3_battery_props,
 	.num_properties = ARRAY_SIZE(lbookv3_battery_props),
+};
+
+static char *lbookv3_power_supplied_to[] = {
+	"lbookv3_battery",
+};
+
+static enum power_supply_property lbookv3_usb_props[] = {
+	POWER_SUPPLY_PROP_ONLINE,
+};
+
+struct power_supply lbookv3_usb = {
+	.name		= "usb",
+	.type		= POWER_SUPPLY_TYPE_USB,
+	.supplied_to	= lbookv3_power_supplied_to,
+	.num_supplicants = ARRAY_SIZE(lbookv3_power_supplied_to),
+	.properties	= lbookv3_usb_props,
+	.num_properties = ARRAY_SIZE(lbookv3_usb_props),
+	.get_property	= lbookv3_usb_get_property,
+
 };
 
 #if defined(CONFIG_APM_EMULATION) || defined(CONFIG_APM_MODULE)
@@ -303,6 +334,12 @@ static int __init lbookv3_battery_init(void)
 		dev_info.battery_registered = 1;
 		printk(KERN_DEBUG "blbookv3_battery: battery registered\n");
 	}
+
+	ret = power_supply_register(NULL, &lbookv3_usb);
+	if(ret) {
+		printk(KERN_ERR "lbookv3_battery: could not register USB power supply\n");
+		goto err_reg_usb;
+	}
 #if defined(CONFIG_APM_EMULATION) || defined(CONFIG_APM_MODULE)
 	apm_get_power_status_orig = apm_get_power_status;
 	apm_get_power_status = lbookv3_apm_get_power_status;
@@ -318,7 +355,9 @@ err3:
 #if defined(CONFIG_APM_EMULATION) || defined(CONFIG_APM_MODULE)
 	apm_get_power_status = apm_get_power_status_orig;
 #endif
-	power_supply_unregister(&lbookv3_battery);	
+	power_supply_unregister(&lbookv3_usb);
+err_reg_usb:
+	power_supply_unregister(&lbookv3_battery);
 err2:
 	clk_disable(adc_clk);
 	clk_put(adc_clk);
@@ -332,6 +371,7 @@ static void __exit lbookv3_battery_exit(void)
 	apm_get_power_status = apm_get_power_status_orig;
 #endif
 	platform_driver_unregister(&lbookv3_battery_driver);
+	power_supply_unregister(&lbookv3_usb);
 	power_supply_unregister(&lbookv3_battery);
 	clk_disable(adc_clk);
 	clk_put(adc_clk);
