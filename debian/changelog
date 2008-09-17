@@ -1,3 +1,16 @@
+linux-2.6 (2.6.25-13) unstable; urgency=low
+
+  * Fix typo in Kconfig (non-working autosuspend)
+  * lbookv3_battery: Add USB power supply
+  * lbookv3_battery: Remove APM emulation support
+  * lbookv3_battery: code cleanup
+  * lbookv3_battery: add IRQ handlers for USB & battery events
+  * PM: disable GPG1 & GPG2 reconfiguring on suspend
+  * PM: autosuspend on idle improvements
+  * New configs
+
+ -- Yauhen Kharuzhy <jekhor@gmail.com>  Thu, 18 Sep 2008 01:49:56 +0300
+
 linux-2.6 (2.6.25-12) unstable; urgency=low
 
   * lbookv3_battery: Add enabling charge on load (not needed, but...)
