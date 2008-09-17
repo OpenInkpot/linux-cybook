@@ -17,6 +17,7 @@
 #include <linux/power_supply.h>
 #include <linux/clk.h>
 #include <linux/err.h>
+#include <linux/interrupt.h>
 
 #include <mach/regs-gpio.h>
 #include <mach/io.h>
@@ -154,7 +155,6 @@ static int lbookv3_usb_get_property (struct power_supply *b,
 	return 0;
 }
 
-
 struct power_supply lbookv3_battery =
 {
 	.name		= "lbookv3_battery",
@@ -181,6 +181,25 @@ struct power_supply lbookv3_usb = {
 	.get_property	= lbookv3_usb_get_property,
 
 };
+
+static irqreturn_t lbookv3_usb_change_irq(int irq, void *dev)
+{
+	printk(KERN_DEBUG "USB change irq: usb cable has been %s\n",
+			lbookv3_usb_connected() ? "connected" : "disconnected");
+
+	power_supply_changed(&lbookv3_usb);
+
+	return IRQ_HANDLED;
+}
+
+static irqreturn_t lbookv3_battery_change_irq(int irq, void *dev)
+{
+	printk(KERN_DEBUG "battery change irq: IRQ %u was raised\n", irq);
+
+	power_supply_changed(&lbookv3_battery);
+
+	return IRQ_HANDLED;
+}
 
 static int s3c2410_adc_init(void)
 {
@@ -213,6 +232,7 @@ err1:
 static int lbookv3_battery_probe(struct platform_device *dev)
 {
 	int ret;
+	int irq;
 
 	ret = s3c2410_adc_init();
 	if(ret != 0)
@@ -223,6 +243,8 @@ static int lbookv3_battery_probe(struct platform_device *dev)
 	s3c2410_gpio_cfgpin(LBOOK_V3_BAT_LOWBAT_PIN, LBOOK_V3_BAT_LOWBAT_PIN_INP);	//nLBO
 	s3c2410_gpio_cfgpin(LBOOK_V3_BAT_ENABLE_CHRG_PIN, LBOOK_V3_BAT_ENABLE_CHRG_PIN_OUTP);	//PROG - auto charge, when pulled high
 	s3c2410_gpio_setpin(LBOOK_V3_BAT_ENABLE_CHRG_PIN, 1);
+
+	s3c2410_gpio_cfgpin(S3C2410_GPF4, S3C2410_GPF4_EINT4);
 
 	ret = power_supply_register(NULL, &lbookv3_battery);
 	if(ret != 0)
@@ -237,8 +259,52 @@ static int lbookv3_battery_probe(struct platform_device *dev)
 		goto err_reg_usb;
 	}
 
+	irq = s3c2410_gpio_getirq(S3C2410_GPF4);
+	ret = request_irq(irq, lbookv3_usb_change_irq,
+			IRQF_DISABLED | IRQF_TRIGGER_RISING
+			| IRQF_TRIGGER_FALLING | IRQF_SHARED,
+			"usb power", &lbookv3_usb);
+
+	if (ret) {
+		printk(KERN_ERR "lbookv3_battery: could not request USB VBUS irq\n");
+		goto err_usb_irq;
+	}
+
+	enable_irq_wake(irq);
+
+	irq = s3c2410_gpio_getirq(LBOOK_V3_BAT_CHRG_PIN);
+	ret = request_irq(irq, lbookv3_battery_change_irq,
+			IRQF_TRIGGER_RISING
+			| IRQF_TRIGGER_FALLING | IRQF_SHARED,
+			"lbookv3-battery", &lbookv3_battery);
+
+	if (ret) {
+		printk(KERN_ERR "lbookv3_battery: could not request CHRG irq\n");
+		goto err_chrg_irq;
+	}
+
+	enable_irq_wake(irq);
+
+	irq = s3c2410_gpio_getirq(LBOOK_V3_BAT_LOWBAT_PIN);
+	ret = request_irq(irq, lbookv3_battery_change_irq,
+			IRQF_TRIGGER_FALLING | IRQF_SHARED,
+			"lbookv3-battery", &lbookv3_battery);
+
+	if (ret) {
+		printk(KERN_ERR "lbookv3_battery: could not request LOWBAT irq\n");
+		goto err_lowbat_irq;
+	}
+
+	enable_irq_wake(irq);
+
 	return ret;
 
+	free_irq(s3c2410_gpio_getirq(LBOOK_V3_BAT_LOWBAT_PIN), &lbookv3_battery);
+err_lowbat_irq:
+	free_irq(s3c2410_gpio_getirq(LBOOK_V3_BAT_CHRG_PIN), &lbookv3_battery);
+err_chrg_irq:
+	free_irq(s3c2410_gpio_getirq(S3C2410_GPF4), &lbookv3_usb);
+err_usb_irq:
 	power_supply_unregister(&lbookv3_usb);
 err_reg_usb:
 	power_supply_unregister(&lbookv3_battery);
@@ -251,6 +317,12 @@ err1:
 
 static int lbookv3_battery_remove(struct platform_device *dev)
 {
+	disable_irq_wake(s3c2410_gpio_getirq(LBOOK_V3_BAT_LOWBAT_PIN));
+	disable_irq_wake(s3c2410_gpio_getirq(LBOOK_V3_BAT_CHRG_PIN));
+	disable_irq_wake(s3c2410_gpio_getirq(S3C2410_GPF4));
+	free_irq(s3c2410_gpio_getirq(LBOOK_V3_BAT_LOWBAT_PIN), &lbookv3_battery);
+	free_irq(s3c2410_gpio_getirq(LBOOK_V3_BAT_CHRG_PIN), &lbookv3_battery);
+	free_irq(s3c2410_gpio_getirq(S3C2410_GPF4), &lbookv3_usb);
 	power_supply_unregister(&lbookv3_usb);
 	power_supply_unregister(&lbookv3_battery);
 	clk_disable(adc_clk);
@@ -282,5 +354,6 @@ module_exit(lbookv3_battery_exit);
 
 /* Module information */
 MODULE_AUTHOR("Piter Konstantinov <pit.here@gmail.com>");
+MODULE_AUTHOR("Yauhen Kharuzhy <jekhor@gmail.com>");
 MODULE_DESCRIPTION("Battery driver for lbook v3");
 MODULE_LICENSE("GPL");
