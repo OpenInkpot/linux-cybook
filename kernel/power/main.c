@@ -558,7 +558,7 @@ power_attr(pm_trace);
 #endif /* CONFIG_PM_TRACE */
 
 #ifdef CONFIG_PM_AUTOSUSPEND
-int pm_autosuspend_enabled = 0;
+int pm_autosuspend_enabled = 1;
 EXPORT_SYMBOL(pm_autosuspend_enabled);
 
 static ssize_t autosuspend_show(struct kobject *kobj, struct kobj_attribute *attr,
