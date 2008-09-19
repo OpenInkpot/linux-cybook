@@ -1,3 +1,15 @@
+linux-2.6 (2.6.25-14) unstable; urgency=low
+
+  * Configs: remove unnesesary options
+  * lbookv3_battery: remove unneeded properties
+  * lbookv3_battery: fix charge calculation below 5%
+  * Autosuspend: use schedule_work() instead
+  * schedule_delayed_work()
+  * Enable autosuspend by default
+  * PM: voodoo from Jinke kernel
+
+ -- Yauhen Kharuzhy <jekhor@gmail.com>  Fri, 19 Sep 2008 21:30:49 +0300
+
 linux-2.6 (2.6.25-13) unstable; urgency=low
 
   * Fix typo in Kconfig (non-working autosuspend)
