@@ -129,7 +129,7 @@ EXPORT_SYMBOL_GPL(arm_pm_restart);
 #ifdef CONFIG_PM_AUTOSUSPEND
 
 static unsigned long sleep_idle_time = HZ;
-static struct delayed_work suspend_worktask;
+static struct work_struct suspend_worktask;
 
 static void do_idle_suspend(struct work_struct *work)
 {
@@ -156,8 +156,8 @@ static void default_idle(void)
 		last_cpustat_procs = curr_cpustat_procs;
 
 		if (time_after(jiffies, sleep_idle_time)) {
-			INIT_DELAYED_WORK(&suspend_worktask, do_idle_suspend);
-			schedule_delayed_work(&suspend_worktask, 1);
+			INIT_WORK(&suspend_worktask, do_idle_suspend);
+			schedule_work(&suspend_worktask);
 			sleep_idle_time = jiffies + pm_autosuspend_timeout;
 		}
 	}
