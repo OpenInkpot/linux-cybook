@@ -77,7 +77,7 @@ static int lbookv3_battery_get_capacity(struct power_supply *b)
 	if (voltage > LBOOK_V3_5PERC_VOLT)
 		return ((voltage - LBOOK_V3_5PERC_VOLT) * 95)/(LBOOK_V3_MAX_VOLT-LBOOK_V3_5PERC_VOLT);
 	else
-		return ((voltage - LBOOK_V3_MIN_VOLT) * 5) / (LBOOK_V3_MAX_VOLT - LBOOK_V3_MIN_VOLT);
+		return ((voltage - LBOOK_V3_MIN_VOLT) * 5) / (LBOOK_V3_5PERC_VOLT - LBOOK_V3_MIN_VOLT);
 
 }
 
