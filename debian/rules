@@ -13,6 +13,8 @@
 # Uncomment this to turn on verbose mode.
 #export DH_VERBOSE=1
 
+flavours := v3 v3ext nfsroot-v3
+
 # This has to be exported to make some magic below work.
 
 .NOTPARALLEL:
@@ -29,50 +31,28 @@ include /usr/share/dpatch/dpatch.make
 
 LINUX_VERSION = 2.6.25
 
-configure: configure-stamp
-configure-stamp: patch-stamp
-	dh_testdir
-	# Add here commands to configure the package.
-
-	touch configure-stamp
-
-
-#Architecture 
 build: build-arch build-indep
 
 build-arch: build-arch-stamp
-build-arch-stamp: configure-stamp
-	mkdir -p build-v3-armel
-	cp $(CURDIR)/debian/config-v3-armel $(CURDIR)/.config
-	$(MAKE) EXTRAVERSION=-v3-$(DEB_HOST_ARCH) ARCH=arm CROSS_COMPILE=$(DEB_HOST_GNU_TYPE)- INSTALL_MOD_PATH=build-v3-armel/ oldconfig
-	$(MAKE) EXTRAVERSION=-v3-$(DEB_HOST_ARCH) ARCH=arm CROSS_COMPILE=$(DEB_HOST_GNU_TYPE)- INSTALL_MOD_PATH=build-v3-armel/ zImage modules
-	$(MAKE) EXTRAVERSION=-v3-$(DEB_HOST_ARCH) ARCH=arm CROSS_COMPILE=$(DEB_HOST_GNU_TYPE)- INSTALL_MOD_PATH=build-v3-armel/ modules_install
-	cp $(CURDIR)/arch/arm/boot/zImage $(CURDIR)/.config $(CURDIR)/System.map $(CURDIR)/build-v3-armel/
-	mkdir -p build-v3ext-armel
-	cp $(CURDIR)/debian/config-v3ext-armel $(CURDIR)/.config
-	$(MAKE) EXTRAVERSION=-v3ext-$(DEB_HOST_ARCH) ARCH=arm CROSS_COMPILE=$(DEB_HOST_GNU_TYPE)- INSTALL_MOD_PATH=build-v3ext-armel/ oldconfig
-	$(MAKE) EXTRAVERSION=-v3ext-$(DEB_HOST_ARCH) ARCH=arm CROSS_COMPILE=$(DEB_HOST_GNU_TYPE)- INSTALL_MOD_PATH=build-v3ext-armel/ zImage modules
-	$(MAKE) EXTRAVERSION=-v3ext-$(DEB_HOST_ARCH) ARCH=arm CROSS_COMPILE=$(DEB_HOST_GNU_TYPE)- INSTALL_MOD_PATH=build-v3ext-armel/ modules_install
-	cp $(CURDIR)/arch/arm/boot/zImage $(CURDIR)/.config $(CURDIR)/System.map $(CURDIR)/build-v3ext-armel/
-	mkdir -p build-nfsroot-v3-armel
-	cp $(CURDIR)/debian/config-nfsroot-v3-armel $(CURDIR)/.config
-	$(MAKE) EXTRAVERSION=-nfsroot-v3-$(DEB_HOST_ARCH) ARCH=arm CROSS_COMPILE=$(DEB_HOST_GNU_TYPE)- INSTALL_MOD_PATH=build-nfsroot-v3-armel/ oldconfig
-	$(MAKE) EXTRAVERSION=-nfsroot-v3-$(DEB_HOST_ARCH) ARCH=arm CROSS_COMPILE=$(DEB_HOST_GNU_TYPE)- INSTALL_MOD_PATH=build-nfsroot-v3-armel/ zImage modules
-	$(MAKE) EXTRAVERSION=-nfsroot-v3-$(DEB_HOST_ARCH) ARCH=arm CROSS_COMPILE=$(DEB_HOST_GNU_TYPE)- INSTALL_MOD_PATH=build-nfsroot-v3-armel/ modules_install
-	cp $(CURDIR)/arch/arm/boot/zImage $(CURDIR)/.config $(CURDIR)/System.map $(CURDIR)/build-nfsroot-v3-armel/
+build-arch-stamp:
+	for FLAVOUR in $(flavours); do \
+		mkdir -p build-$$FLAVOUR-armel; \
+		cp $(CURDIR)/debian/config-$$FLAVOUR-armel $(CURDIR)/.config; \
+		$(MAKE) EXTRAVERSION=-$$FLAVOUR-$(DEB_HOST_ARCH) ARCH=arm CROSS_COMPILE=$(DEB_HOST_GNU_TYPE)- INSTALL_MOD_PATH=build-$$FLAVOUR-armel/ oldconfig; \
+		$(MAKE) EXTRAVERSION=-$$FLAVOUR-$(DEB_HOST_ARCH) ARCH=arm CROSS_COMPILE=$(DEB_HOST_GNU_TYPE)- INSTALL_MOD_PATH=build-$$FLAVOUR-armel/ zImage modules; \
+		$(MAKE) EXTRAVERSION=-$$FLAVOUR-$(DEB_HOST_ARCH) ARCH=arm CROSS_COMPILE=$(DEB_HOST_GNU_TYPE)- INSTALL_MOD_PATH=build-$$FLAVOUR-armel/ modules_install; \
+		cp $(CURDIR)/arch/arm/boot/zImage $(CURDIR)/.config $(CURDIR)/System.map $(CURDIR)/build-$$FLAVOUR-armel/; \
+	done
 
 	touch $@
 
-build-indep: build-indep-stamp
-build-indep-stamp: configure-stamp  
-
-	touch $@
+build-indep:
 
 clean: clean-patched unpatch
 clean-patched: patch-stamp
 	dh_testdir
 	dh_testroot
-	rm -f build-arch-stamp build-indep-stamp configure-stamp
+	rm -rf *-stamp build-*
 	$(MAKE) ARCH=arm distclean
 	dh_clean 
 
@@ -83,32 +63,22 @@ install-indep:
 	dh_clean -k -i 
 	dh_installdirs -i
 	dh_install -i
-	mkdir -p $(CURDIR)/debian/linux-image-$(LINUX_VERSION)-v3-$(DEB_HOST_ARCH)/boot
-	install -m 0644 $(CURDIR)/build-v3-armel/zImage $(CURDIR)/debian/linux-image-$(LINUX_VERSION)-v3-$(DEB_HOST_ARCH)/boot/vmlinuz-$(LINUX_VERSION)-v3-$(DEB_HOST_ARCH)
-	install -m 0644 $(CURDIR)/build-v3-armel/System.map $(CURDIR)/debian/linux-image-$(LINUX_VERSION)-v3-$(DEB_HOST_ARCH)/boot/System.map-$(LINUX_VERSION)-v3-$(DEB_HOST_ARCH)
-	install -m 0644 $(CURDIR)/build-v3-armel/.config $(CURDIR)/debian/linux-image-$(LINUX_VERSION)-v3-$(DEB_HOST_ARCH)/boot/config-$(LINUX_VERSION)-v3-$(DEB_HOST_ARCH)
-	mkdir -p $(CURDIR)/debian/linux-image-$(LINUX_VERSION)-v3ext-$(DEB_HOST_ARCH)/boot
-	install -m 0644 $(CURDIR)/build-v3ext-armel/zImage $(CURDIR)/debian/linux-image-$(LINUX_VERSION)-v3ext-$(DEB_HOST_ARCH)/boot/vmlinuz-$(LINUX_VERSION)-v3ext-$(DEB_HOST_ARCH)
-	install -m 0644 $(CURDIR)/build-v3ext-armel/System.map $(CURDIR)/debian/linux-image-$(LINUX_VERSION)-v3ext-$(DEB_HOST_ARCH)/boot/System.map-$(LINUX_VERSION)-v3ext-$(DEB_HOST_ARCH)
-	install -m 0644 $(CURDIR)/build-v3ext-armel/.config $(CURDIR)/debian/linux-image-$(LINUX_VERSION)-v3ext-$(DEB_HOST_ARCH)/boot/config-$(LINUX_VERSION)-v3ext-$(DEB_HOST_ARCH)
-	mkdir -p $(CURDIR)/debian/linux-image-$(LINUX_VERSION)-nfsroot-v3-$(DEB_HOST_ARCH)/boot
-	install -m 0644 $(CURDIR)/build-nfsroot-v3-armel/zImage $(CURDIR)/debian/linux-image-$(LINUX_VERSION)-nfsroot-v3-$(DEB_HOST_ARCH)/boot/vmlinuz-$(LINUX_VERSION)-nfsroot-v3-$(DEB_HOST_ARCH)
-	install -m 0644 $(CURDIR)/build-nfsroot-v3-armel/System.map $(CURDIR)/debian/linux-image-$(LINUX_VERSION)-nfsroot-v3-$(DEB_HOST_ARCH)/boot/System.map-$(LINUX_VERSION)-nfsroot-v3-$(DEB_HOST_ARCH)
-	install -m 0644 $(CURDIR)/build-nfsroot-v3-armel/.config $(CURDIR)/debian/linux-image-$(LINUX_VERSION)-nfsroot-v3-$(DEB_HOST_ARCH)/boot/config-$(LINUX_VERSION)-nfsroot-v3-$(DEB_HOST_ARCH)
-
-
+	for FLAVOUR in $(flavours); do \
+		mkdir -p $(CURDIR)/debian/linux-image-$(LINUX_VERSION)-$$FLAVOUR-$(DEB_HOST_ARCH)/boot; \
+		install -m 0644 $(CURDIR)/build-$$FLAVOUR-armel/zImage $(CURDIR)/debian/linux-image-$(LINUX_VERSION)-$$FLAVOUR-$(DEB_HOST_ARCH)/boot/vmlinuz-$(LINUX_VERSION)-$$FLAVOUR-$(DEB_HOST_ARCH); \
+		install -m 0644 $(CURDIR)/build-$$FLAVOUR-armel/System.map $(CURDIR)/debian/linux-image-$(LINUX_VERSION)-$$FLAVOUR-$(DEB_HOST_ARCH)/boot/System.map-$(LINUX_VERSION)-$$FLAVOUR-$(DEB_HOST_ARCH); \
+		install -m 0644 $(CURDIR)/build-$$FLAVOUR-armel/.config $(CURDIR)/debian/linux-image-$(LINUX_VERSION)-$$FLAVOUR-$(DEB_HOST_ARCH)/boot/config-$(LINUX_VERSION)-$$FLAVOUR-$(DEB_HOST_ARCH); \
+	done
 
 install-arch:
 	dh_testdir
 	dh_testroot
 	dh_clean -k -s 
 	dh_installdirs -s
-	mkdir -p $(CURDIR)/debian/linux-modules-$(LINUX_VERSION)-v3/
-	mkdir -p $(CURDIR)/debian/linux-modules-$(LINUX_VERSION)-v3ext/
-	mkdir -p $(CURDIR)/debian/linux-modules-$(LINUX_VERSION)-nfsroot-v3/
-	cp -r $(CURDIR)/build-v3-armel/lib $(CURDIR)/debian/linux-modules-$(LINUX_VERSION)-v3/
-	cp -r $(CURDIR)/build-v3ext-armel/lib $(CURDIR)/debian/linux-modules-$(LINUX_VERSION)-v3ext/
-	cp -r $(CURDIR)/build-nfsroot-v3-armel/lib $(CURDIR)/debian/linux-modules-$(LINUX_VERSION)-nfsroot-v3/
+	for FLAVOUR in $(flavours); do \
+		mkdir -p $(CURDIR)/debian/linux-modules-$(LINUX_VERSION)-$$FLAVOUR/; \
+		cp -r $(CURDIR)/build-$$FLAVOUR-armel/lib $(CURDIR)/debian/linux-modules-$(LINUX_VERSION)-$$FLAVOUR/; \
+	done
 	dh_install -s
 
 # Must not depend on anything. This is to be called by
