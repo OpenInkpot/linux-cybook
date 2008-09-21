@@ -40,15 +40,15 @@ struct gpio_line {
 
 static struct gpio_line lines[3] = {
 	[0] = {
-		.codes = { KEY_KP1, KEY_KP7, KEY_KP4, KEY_KP0, KEY_KPPLUS,
+		.codes = { KEY_1, KEY_7, KEY_4, KEY_0, KEY_KPPLUS,
 			   KEY_ENTER, KEY_UP },
 	},
 	[1] = {
-		.codes = { KEY_KP6, KEY_KP3, KEY_KP9, KEY_RESERVED, KEY_KPMINUS,
+		.codes = { KEY_6, KEY_3, KEY_9, KEY_RESERVED, KEY_KPMINUS,
 			   KEY_ESC, KEY_DOWN },
 	},
 	[2] = {
-		.codes = { KEY_KP2, KEY_KP8, KEY_KP5, KEY_RESERVED,
+		.codes = { KEY_2, KEY_8, KEY_5, KEY_RESERVED,
 			   KEY_RESERVED, KEY_RESERVED, KEY_RESERVED },
 	},
 };
