@@ -9,6 +9,7 @@
  */
 
 #include <linux/module.h>
+#include <linux/kmod.h>
 #include <linux/suspend.h>
 #include <linux/kobject.h>
 #include <linux/string.h>
@@ -348,6 +349,7 @@ int suspend_devices_and_enter(suspend_state_t state)
 
 	enable_nonboot_cpus();
  Finish:
+	usermodehelper_disabled = 0;
 	if (suspend_ops->finish)
 		suspend_ops->finish();
  Resume_devices:

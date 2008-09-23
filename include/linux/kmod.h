@@ -24,6 +24,10 @@
 #include <linux/errno.h>
 #include <linux/compiler.h>
 
+#ifdef CONFIG_PM
+extern int usermodehelper_disabled;
+#endif
+
 #define KMOD_PATH_LEN 256
 
 #ifdef CONFIG_MODULES
