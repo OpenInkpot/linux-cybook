@@ -626,12 +626,21 @@ static struct attribute_group attr_group = {
 	.attrs = g,
 };
 
+#ifdef CONFIG_PM_AUTOSUSPEND
+struct workqueue_struct *pm_autosuspend_workqueue;
+
+#endif
 
 static int __init pm_init(void)
 {
 	power_kobj = kobject_create_and_add("power", NULL);
 	if (!power_kobj)
 		return -ENOMEM;
+
+#ifdef CONFIG_PM_AUTOSUSPEND
+	pm_autosuspend_workqueue = create_singlethread_workqueue("kautosuspend");
+#endif
+
 	return sysfs_create_group(power_kobj, &attr_group);
 }
 
