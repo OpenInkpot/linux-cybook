@@ -124,6 +124,12 @@ static int lbookv3_battery_get_property	(struct power_supply *b,
 	case POWER_SUPPLY_PROP_VOLTAGE_MIN_DESIGN:
 		val->intval = LBOOK_V3_MIN_VOLT;
 		break;
+	case POWER_SUPPLY_PROP_CHARGE_FULL_DESIGN:
+		val->intval = 100;
+		break;
+	case POWER_SUPPLY_PROP_CHARGE_EMPTY_DESIGN:
+		val->intval = 0;
+		break;
 	case POWER_SUPPLY_PROP_CHARGE_NOW:
 		val->intval = lbookv3_battery_get_capacity(b);
 		if (val->intval > 100)
