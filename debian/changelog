@@ -1,3 +1,20 @@
+linux-2.6 (2.6.25-15) unstable; urgency=low
+
+  [ Mikhail Gusarov ]
+  * Clean up garbage
+  * Introduced $flavours in debian/rules to decrease amount of
+    copy-paste code
+  * KEY_KP<N> keys changed to KEY_<N> to avoid unwanted
+    interaction with virtual NumLock state
+
+  [ Yauhen Kharuzhy ]
+  * PM: Now autosuspend works correctly
+  * Fix hotplug on resume
+  * Revert "lbookv3_battery: remove unneeded properties"
+  * lbookv3_battery: removed properties CHARGE_DESIGN_* are came back
+
+ -- Yauhen Kharuzhy <jekhor@gmail.com>  Tue, 23 Sep 2008 23:37:33 +0300
+
 linux-2.6 (2.6.25-14) unstable; urgency=low
 
   * Configs: remove unnesesary options
