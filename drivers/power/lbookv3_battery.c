@@ -161,12 +161,18 @@ static int lbookv3_usb_get_property (struct power_supply *b,
 	return 0;
 }
 
+void lbookv3_battery_external_power_changed(struct power_supply *psy)
+{
+	power_supply_changed(psy);
+}
+
 struct power_supply lbookv3_battery =
 {
 	.name		= "lbookv3_battery",
 	.get_property   = lbookv3_battery_get_property,
 	.properties     = lbookv3_battery_props,
 	.num_properties = ARRAY_SIZE(lbookv3_battery_props),
+	.external_power_changed = lbookv3_battery_external_power_changed,
 };
 
 static char *lbookv3_power_supplied_to[] = {
