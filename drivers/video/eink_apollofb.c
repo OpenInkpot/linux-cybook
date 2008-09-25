@@ -46,7 +46,7 @@
 #define is_portrait(var) (!(var.rotate % 180))
 
 struct apollofb_options {
-	unsigned int manual_refresh:1;
+	unsigned int manual_refresh_thr;
 	unsigned int use_sleep_mode:1;
 };
 
@@ -207,9 +207,6 @@ static void apollofb_apollo_update_part(struct apollofb_par *par,
 	if (par->current_mode == APOLLO_STATUS_MODE_SLEEP)
 		apollo_set_normal_mode(par);
 
-	if (par->options.manual_refresh)
-		apollo_send_command(par, APOLLO_MANUAL_REFRESH);
-
 	apollo_send_command(par, APOLLO_LOAD_PARTIAL_PICTURE);
 	apollo_send_data(par, (x1 >> 8) & 0xff);
 	apollo_send_data(par, x1 & 0xff);
@@ -254,10 +251,13 @@ static void apollofb_dpy_deferred_io(struct fb_info *info,
 	unsigned long int start_page = -1, end_page = -1;
 	unsigned int y1 = 0, y2 = 0;
 	struct page *cur;
+	unsigned int pages_count = 0;
 
 	dev_dbg(info->dev, "%s called\n", __FUNCTION__);
 
 	list_for_each_entry(cur, pagelist, lru) {
+		pages_count++;
+
 		if (start_page == -1) {
 			start_page = cur->index;
 			end_page = cur->index;
@@ -284,7 +284,18 @@ static void apollofb_dpy_deferred_io(struct fb_info *info,
 	if (y2 >= height)
 		y2 = height - 1;
 
+	if (pages_count >= par->options.manual_refresh_thr) {
+		mutex_lock(&par->lock);
+		apollo_send_command(par, APOLLO_AUTO_REFRESH);
+		apollo_send_command(par, APOLLO_MANUAL_REFRESH);
+		mutex_unlock(&par->lock);
+	}
+
 	apollofb_apollo_update_part(par, 0, y1,	width - 1, y2);
+
+	if (pages_count >= par->options.manual_refresh_thr) {
+		apollo_send_command(par, APOLLO_CANCEL_AUTO_REFRESH);
+	}
 
 	dev_dbg(info->dev, "%s finished\n", __FUNCTION__);
 }
@@ -585,35 +596,46 @@ static ssize_t apollofb_temperature_show(struct device *dev,
 	return strlen(buf) + 1;
 }
 
-static ssize_t apollofb_manual_refresh_show(struct device *dev,
+static unsigned int apollofb_get_screenpages_count(struct fb_info *info)
+{
+	return info->fix.smem_len % PAGE_SIZE ?
+		info->fix.smem_len / PAGE_SIZE +1 :
+		info->fix.smem_len / PAGE_SIZE;
+}
+
+static ssize_t apollofb_manual_refresh_thr_show(struct device *dev,
 		struct device_attribute *attr, char *buf)
 {
 	struct fb_info *info = dev_get_drvdata(dev);
 	struct apollofb_par *par = info->par;
 
-	sprintf(buf, "%d\n", par->options.manual_refresh);
-	return strlen(buf) + 1;
+	return sprintf(buf, "%u\n", par->options.manual_refresh_thr);
 }
 
-static ssize_t apollofb_manual_refresh_store(struct device *dev,
+static ssize_t apollofb_manual_refresh_thr_store(struct device *dev,
 		struct device_attribute *attr, const char *buf, size_t size)
 {
 	struct fb_info *info = dev_get_drvdata(dev);
 	struct apollofb_par *par = info->par;
-	char *after;
-	unsigned long state = simple_strtoul(buf, &after, 10);
-	size_t count = after - buf;
-	ssize_t ret = -EINVAL;
+	unsigned int val;
 
-	if (*after && isspace(*after))
-		count++;
-
-	if ((count == size) && (state <= 1)) {
-		ret = count;
-		par->options.manual_refresh = state;
+	if ((sscanf(buf, "%u", &val) == 1) &&
+			(val > 0) &&
+			(val <= apollofb_get_screenpages_count(info))) {
+		par->options.manual_refresh_thr = val;
+		return size;
 	}
 
-	return ret;
+	return -EINVAL;
+}
+
+static ssize_t apollofb_manual_refresh_thr_max_show(struct device *dev,
+		struct device_attribute *attr, char *buf)
+{
+	struct fb_info *info = dev_get_drvdata(dev);
+	struct apollofb_par *par = info->par;
+
+	return sprintf(buf, "%u\n", apollofb_get_screenpages_count(info));
 }
 
 static ssize_t apollofb_use_sleep_mode_show(struct device *dev,
@@ -691,8 +713,10 @@ static ssize_t apollofb_defio_delay_store(struct device *dev,
 	return ret;
 }
 
-DEVICE_ATTR(manual_refresh, 0666,
-		apollofb_manual_refresh_show, apollofb_manual_refresh_store);
+DEVICE_ATTR(manual_refresh_threshold_max, 0444,
+		apollofb_manual_refresh_thr_max_show, NULL);
+DEVICE_ATTR(manual_refresh_threshold, 0666,
+		apollofb_manual_refresh_thr_show, apollofb_manual_refresh_thr_store);
 DEVICE_ATTR(defio_delay, 0666,
 		apollofb_defio_delay_show, apollofb_defio_delay_store);
 DEVICE_ATTR(use_sleep_mode, 0666,
@@ -816,7 +840,7 @@ static int __devinit apollofb_probe(struct platform_device *dev)
 	par->info = info;
 	mutex_init(&par->lock);
 	INIT_DELAYED_WORK(&par->deferred_work, apollofb_deferred_work);
-	par->options.manual_refresh = 0;
+	par->options.manual_refresh_thr = apollofb_get_screenpages_count(info) / 2;
 	par->options.use_sleep_mode = 0;
 	par->ops = &pdata->ops;
 
@@ -857,6 +881,7 @@ static int __devinit apollofb_probe(struct platform_device *dev)
 	apollo_send_data(par, 0x02);
 	apollo_send_command(par, APOLLO_ERASE_DISPLAY);
 	apollo_send_data(par, 0x01);
+	apollo_send_command(par, APOLLO_CANCEL_AUTO_REFRESH);
 	if (par->options.use_sleep_mode)
 		apollo_set_sleep_mode(par);
 	mutex_unlock(&par->lock);
@@ -880,9 +905,13 @@ static int __devinit apollofb_probe(struct platform_device *dev)
 	if (retval)
 		goto err_devattr_temperature;
 
-	retval = device_create_file(info->dev, &dev_attr_manual_refresh);
+	retval = device_create_file(info->dev, &dev_attr_manual_refresh_threshold);
 	if (retval)
 		goto err_devattr_manref;
+
+	retval = device_create_file(info->dev, &dev_attr_manual_refresh_threshold_max);
+	if (retval)
+		goto err_devattr_manref_max;
 
 	retval = device_create_file(info->dev, &dev_attr_defio_delay);
 	if (retval)
@@ -899,7 +928,9 @@ static int __devinit apollofb_probe(struct platform_device *dev)
 err_devattr_use_sleep_mode:
 	device_remove_file(info->dev, &dev_attr_defio_delay);
 err_devattr_defio_delay:
-	device_remove_file(info->dev, &dev_attr_manual_refresh);
+	device_remove_file(info->dev, &dev_attr_manual_refresh_threshold_max);
+err_devattr_manref_max:
+	device_remove_file(info->dev, &dev_attr_manual_refresh_threshold);
 err_devattr_manref:
 	device_remove_file(info->dev, &dev_attr_temperature);
 err_devattr_temperature:
@@ -924,7 +955,8 @@ static int __devexit apollofb_remove(struct platform_device *dev)
 		flush_scheduled_work();
 
 		device_remove_file(info->dev, &dev_attr_use_sleep_mode);
-		device_remove_file(info->dev, &dev_attr_manual_refresh);
+		device_remove_file(info->dev, &dev_attr_manual_refresh_threshold_max);
+		device_remove_file(info->dev, &dev_attr_manual_refresh_threshold);
 		device_remove_file(info->dev, &dev_attr_defio_delay);
 		device_remove_file(info->dev, &dev_attr_temperature);
 		unregister_framebuffer(info);
