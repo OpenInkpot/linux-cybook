@@ -82,7 +82,7 @@ static irqreturn_t lbookv3_keys_isr(int irq, void *dev_id)
 
 	for (i = S3C2410_GPF0; i <= S3C2410_GPF2; i++) {
 		line = &lines[i - S3C2410_GPF0];
-		if (gpio_get_value(i)) {
+		if (s3c2410_gpio_getpin(i)) {
 			if (!line->state)
 				continue;
 			for (j = 0; j < 7; j++)
@@ -99,7 +99,7 @@ static irqreturn_t lbookv3_keys_isr(int irq, void *dev_id)
 		for (j = 0; j < ARRAY_SIZE(pullups); j++)
 			do {
 				s3c2410_gpio_setpin(pullups[j], 1);
-			} while (!gpio_get_value(pullups[j]));
+			} while (!s3c2410_gpio_getpin(pullups[j]));
 
 		mdelay(10);
 
@@ -107,7 +107,7 @@ static irqreturn_t lbookv3_keys_isr(int irq, void *dev_id)
 			s3c2410_gpio_setpin(pullups[j], 0);
 			udelay(10);
 
-			if (!gpio_get_value(i)) {
+			if (!s3c2410_gpio_getpin(i)) {
 				line->state |= 1 << j;
 				input_event(input, EV_KEY, line->codes[j], 1);
 				input_sync(input);
