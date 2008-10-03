@@ -37,8 +37,8 @@
 #include <asm/thread_notify.h>
 #include <asm/uaccess.h>
 #include <asm/mach/time.h>
-#include <asm/hardware.h>
-#include <asm/arch/regs-gpio.h>
+#include <mach/hardware.h>
+#include <mach/regs-gpio.h>
 
 static const char *processor_modes[] = {
   "USER_26", "FIQ_26" , "IRQ_26" , "SVC_26" , "UK4_26" , "UK5_26" , "UK6_26" , "UK7_26" ,
