@@ -1,3 +1,9 @@
+linux-2.6 (2.6.25-17) unstable; urgency=low
+
+  * Fix STORAGE partition size on V3ext.
+
+ -- Yauhen Kharuzhy <jekhor@gmail.com>  Sat, 04 Oct 2008 22:41:26 +0300
+
 linux-2.6 (2.6.25-16) unstable; urgency=low
 
   [ Yauhen Kharuzhy ]
