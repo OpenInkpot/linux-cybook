@@ -1,7 +1,7 @@
 #
 # Automatically generated make config: don't edit
-# Linux kernel version: 2.6.25-v3-armel
-# Thu Sep 18 22:44:00 2008
+# Linux kernel version: 2.6.25.10
+# Sat Oct  4 13:44:59 2008
 #
 CONFIG_ARM=y
 CONFIG_SYS_SUPPORTS_APM_EMULATION=y
@@ -279,7 +279,7 @@ CONFIG_ALIGNMENT_TRAP=y
 #
 CONFIG_ZBOOT_ROM_TEXT=0x0
 CONFIG_ZBOOT_ROM_BSS=0x0
-CONFIG_CMDLINE="noinitrd root=/dev/mtdblock1 rootfstype=jffs2 loglevel=8 ip=192.168.111.1"
+CONFIG_CMDLINE="noinitrd root=/dev/mtdblock1 rootfstype=jffs2 ip=192.168.111.1"
 CONFIG_IGNORE_CMDLINE=y
 # CONFIG_XIP_KERNEL is not set
 CONFIG_KEXEC=y
@@ -666,7 +666,7 @@ CONFIG_SPI_S3C24XX=y
 # CONFIG_SPI_TLE62X0 is not set
 # CONFIG_W1 is not set
 CONFIG_POWER_SUPPLY=m
-CONFIG_POWER_SUPPLY_DEBUG=y
+# CONFIG_POWER_SUPPLY_DEBUG is not set
 # CONFIG_PDA_POWER is not set
 CONFIG_APM_POWER=m
 # CONFIG_BATTERY_DS2760 is not set
