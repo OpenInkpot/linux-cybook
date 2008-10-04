@@ -45,6 +45,7 @@
 #include <mach/regs-gpio.h>
 #include <mach/regs-mem.h>
 #include <mach/regs-irq.h>
+#include <asm/mach-types.h>
 
 #include <asm/mach/time.h>
 
@@ -679,6 +680,12 @@ static int s3c2410_pm_enter(suspend_state_t state)
 {
 	unsigned long regs_save[16];
 
+#ifdef CONFIG_ARCH_LBOOK_V3
+	if (machine_is_lbook_v3()) {
+		s3c2410_gpio_setpin(S3C2410_GPC6, 1);
+	}
+	
+#endif
 	/* ensure the debug is initialised (if enabled) */
 
 	s3c2410_pm_debug_init();
@@ -787,6 +794,12 @@ static int s3c2410_pm_enter(suspend_state_t state)
 
 	s3c2410_pm_check_restore();
 
+#ifdef CONFIG_ARCH_LBOOK_V3
+	if (machine_is_lbook_v3()) {
+		s3c2410_gpio_setpin(S3C2410_GPC6, 0);
+	}
+	
+#endif
 	/* ok, let's return from sleep */
 
 	DBG("S3C2410 PM Resume (post-restore)\n");
