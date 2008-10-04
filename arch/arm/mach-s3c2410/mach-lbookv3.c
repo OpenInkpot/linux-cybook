@@ -135,17 +135,17 @@ static struct mtd_partition lbookv3_nand_part[] = {
 	},
 	[2] = {
 		.name	= "LOGO",
-		.offset = SZ_1M * 60,
+		.offset = SZ_1M * 59,
 		.size	= SZ_1M,
 	},
 	[3] = {
 		.name	= "USERDATA",
-		.offset	= SZ_1M * 0x3D,
+		.offset	= SZ_1M * 0x3C,
 		.size	= SZ_2M,
 	},
 	[4] = {
 		.name	= "STORAGE",
-		.offset	= SZ_1M * 0x3F,
+		.offset	= SZ_1M * 0x3E,
 		.size	= SZ_1M * 450,
 	},
 	[5] = {
