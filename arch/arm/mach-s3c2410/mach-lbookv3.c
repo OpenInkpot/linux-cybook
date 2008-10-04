@@ -146,7 +146,7 @@ static struct mtd_partition lbookv3_nand_part[] = {
 	[4] = {
 		.name	= "STORAGE",
 		.offset	= SZ_1M * 0x3F,
-		.size	= SZ_1M * 9,
+		.size	= SZ_1M * 450,
 	},
 	[5] = {
 		.name	= "SPARE",
