@@ -257,6 +257,16 @@ static void apollofb_dpy_deferred_io(struct fb_info *info,
 
 	list_for_each_entry(cur, pagelist, lru) {
 		pages_count++;
+	}
+
+	if (pages_count >= par->options.manual_refresh_thr) {
+		mutex_lock(&par->lock);
+		apollo_send_command(par, APOLLO_AUTO_REFRESH);
+		apollo_send_command(par, APOLLO_MANUAL_REFRESH);
+		mutex_unlock(&par->lock);
+	}
+
+	list_for_each_entry(cur, pagelist, lru) {
 
 		if (start_page == -1) {
 			start_page = cur->index;
@@ -283,13 +293,6 @@ static void apollofb_dpy_deferred_io(struct fb_info *info,
 	y2 = ((end_page + 1) * PAGE_SIZE - 1) / width;
 	if (y2 >= height)
 		y2 = height - 1;
-
-	if (pages_count >= par->options.manual_refresh_thr) {
-		mutex_lock(&par->lock);
-		apollo_send_command(par, APOLLO_AUTO_REFRESH);
-		apollo_send_command(par, APOLLO_MANUAL_REFRESH);
-		mutex_unlock(&par->lock);
-	}
 
 	apollofb_apollo_update_part(par, 0, y1,	width - 1, y2);
 
