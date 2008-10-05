@@ -176,7 +176,8 @@ static void apollo_wakeup(struct apollofb_par *par)
 
 static void apollofb_apollo_update_part(struct apollofb_par *par,
 		unsigned int x1, unsigned int y1,
-		unsigned int x2, unsigned int y2)
+		unsigned int x2, unsigned int y2,
+		int last_fragment)
 {
 	int i, j, k;
 	struct fb_info *info = par->info;
@@ -201,8 +202,6 @@ static void apollofb_apollo_update_part(struct apollofb_par *par,
 	mask = 0;
 	for (i = 0; i < bpp; i++)
 		mask = (mask << 1) | 1;
-
-	mutex_lock(&par->lock);
 
 	if (par->current_mode == APOLLO_STATUS_MODE_SLEEP)
 		apollo_set_normal_mode(par);
@@ -231,10 +230,9 @@ static void apollofb_apollo_update_part(struct apollofb_par *par,
 	apollo_send_command(par, APOLLO_STOP_LOADING);
 	apollo_send_command(par, APOLLO_DISPLAY_PARTIAL_PICTURE);
 
-	if (par->options.use_sleep_mode)
+	if (par->options.use_sleep_mode && last_fragment)
 		apollo_set_sleep_mode(par);
 
-	mutex_unlock(&par->lock);
 	dev_dbg(info->dev, "%s finished\n", __FUNCTION__);
 }
 
@@ -259,46 +257,49 @@ static void apollofb_dpy_deferred_io(struct fb_info *info,
 		pages_count++;
 	}
 
+	mutex_lock(&par->lock);
+
+	if (par->current_mode == APOLLO_STATUS_MODE_SLEEP)
+		apollo_set_normal_mode(par);
+
 	if (pages_count >= par->options.manual_refresh_thr) {
-		mutex_lock(&par->lock);
 		apollo_send_command(par, APOLLO_AUTO_REFRESH);
 		apollo_send_command(par, APOLLO_MANUAL_REFRESH);
-		mutex_unlock(&par->lock);
-	}
-
-	list_for_each_entry(cur, pagelist, lru) {
-
-		if (start_page == -1) {
-			start_page = cur->index;
-			end_page = cur->index;
-			continue;
-		}
-
-		if (cur->index == end_page + 1) {
-			end_page++;
-		} else {
-			y1 = start_page * PAGE_SIZE / width;
-			y2 = ((end_page + 1) * PAGE_SIZE - 1) / width;
-			if (y2 >= height)
-				y2 = height - 1;
-
-			apollofb_apollo_update_part(par, 0, y1, width - 1, y2);
-
-			start_page = cur->index;
-			end_page = cur->index;
-		}
-	}
-
-	y1 = start_page * PAGE_SIZE / width;
-	y2 = ((end_page + 1) * PAGE_SIZE - 1) / width;
-	if (y2 >= height)
-		y2 = height - 1;
-
-	apollofb_apollo_update_part(par, 0, y1,	width - 1, y2);
-
-	if (pages_count >= par->options.manual_refresh_thr) {
+		apollofb_apollo_update_part(par, 0, 0, width - 1, height - 1, 1);
 		apollo_send_command(par, APOLLO_CANCEL_AUTO_REFRESH);
+	} else {
+
+		list_for_each_entry(cur, pagelist, lru) {
+
+			if (start_page == -1) {
+				start_page = cur->index;
+				end_page = cur->index;
+				continue;
+			}
+
+			if (cur->index == end_page + 1) {
+				end_page++;
+			} else {
+				y1 = start_page * PAGE_SIZE / width;
+				y2 = ((end_page + 1) * PAGE_SIZE - 1) / width;
+				if (y2 >= height)
+					y2 = height - 1;
+
+				apollofb_apollo_update_part(par, 0, y1, width - 1, y2, 0);
+
+				start_page = cur->index;
+				end_page = cur->index;
+			}
+		}
+
+		y1 = start_page * PAGE_SIZE / width;
+		y2 = ((end_page + 1) * PAGE_SIZE - 1) / width;
+		if (y2 >= height)
+			y2 = height - 1;
+
+		apollofb_apollo_update_part(par, 0, y1,	width - 1, y2, 1);
 	}
+	mutex_unlock(&par->lock);
 
 	dev_dbg(info->dev, "%s finished\n", __FUNCTION__);
 }
@@ -313,7 +314,7 @@ static void apollofb_deferred_work(struct work_struct *work)
 	unsigned int height = is_portrait(info->var) ? info->var.yres :
 							info->var.xres;
 
-	apollofb_apollo_update_part(par, 0, 0, width - 1, height - 1);
+	apollofb_apollo_update_part(par, 0, 0, width - 1, height - 1, 1);
 }
 
 static void apollofb_fillrect(struct fb_info *info,
