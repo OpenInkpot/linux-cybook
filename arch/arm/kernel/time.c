@@ -278,6 +278,10 @@ int do_settimeofday(struct timespec *tv)
 
 	ntp_clear();
 	write_sequnlock_irq(&xtime_lock);
+
+#ifdef CONFIG_RTC_SYSTOHC
+	rtc_systohc(sec);
+#endif
 	clock_was_set();
 	return 0;
 }

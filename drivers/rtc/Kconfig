@@ -29,6 +29,15 @@ config RTC_HCTOSYS
 	  the value read from a specified RTC device. This is useful to avoid
 	  unnecessary fsck runs at boot time, and to network better.
 
+config RTC_SYSTOHC
+	bool "Set RTC time on system time setting"
+	depends on RTC_CLASS = y
+	default n
+	help
+	  If you say yes here, the RTC will be automatically set on every 
+	  settimeofday() syscall invocation. It can be useful on embedded
+	  devices for transparent suspend/resume operations.
+
 config RTC_HCTOSYS_DEVICE
 	string "RTC used to set the system time"
 	depends on RTC_HCTOSYS = y

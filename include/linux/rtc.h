@@ -230,6 +230,11 @@ int rtc_control(rtc_task_t *t, unsigned int cmd, unsigned long arg);
 extern int rtc_hctosys(void);
 #endif
 
+#ifdef CONFIG_RTC_SYSTOHC
+extern int rtc_systohc(unsigned long time);
+#endif
+
+
 #endif /* __KERNEL__ */
 
 #endif /* _LINUX_RTC_H_ */
