@@ -226,6 +226,10 @@ int rtc_register(rtc_task_t *task);
 int rtc_unregister(rtc_task_t *task);
 int rtc_control(rtc_task_t *t, unsigned int cmd, unsigned long arg);
 
+#ifdef CONFIG_RTC_HCTOSYS
+extern int rtc_hctosys(void);
+#endif
+
 #endif /* __KERNEL__ */
 
 #endif /* _LINUX_RTC_H_ */

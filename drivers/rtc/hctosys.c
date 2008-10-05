@@ -22,7 +22,7 @@
  * the best guess is to add 0.5s.
  */
 
-static int __init rtc_hctosys(void)
+int rtc_hctosys(void)
 {
 	int err;
 	struct rtc_time tm;
@@ -65,5 +65,6 @@ static int __init rtc_hctosys(void)
 
 	return 0;
 }
+EXPORT_SYMBOL_GPL(rtc_hctosys);
 
 late_initcall(rtc_hctosys);
