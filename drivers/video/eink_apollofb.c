@@ -230,8 +230,12 @@ static void apollofb_apollo_update_part(struct apollofb_par *par,
 	apollo_send_command(par, APOLLO_STOP_LOADING);
 	apollo_send_command(par, APOLLO_DISPLAY_PARTIAL_PICTURE);
 
-	if (par->options.use_sleep_mode && last_fragment)
-		apollo_set_sleep_mode(par);
+	if (last_fragment) {
+		apollo_send_command(par, APOLLO_CANCEL_AUTO_REFRESH);
+
+		if (par->options.use_sleep_mode)
+			apollo_set_sleep_mode(par);
+	}
 
 	dev_dbg(info->dev, "%s finished\n", __FUNCTION__);
 }
@@ -266,7 +270,6 @@ static void apollofb_dpy_deferred_io(struct fb_info *info,
 		apollo_send_command(par, APOLLO_AUTO_REFRESH);
 		apollo_send_command(par, APOLLO_MANUAL_REFRESH);
 		apollofb_apollo_update_part(par, 0, 0, width - 1, height - 1, 1);
-		apollo_send_command(par, APOLLO_CANCEL_AUTO_REFRESH);
 	} else {
 
 		list_for_each_entry(cur, pagelist, lru) {
