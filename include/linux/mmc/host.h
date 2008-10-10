@@ -129,6 +129,9 @@ struct mmc_host {
 	/* private data */
 	spinlock_t		lock;		/* lock for claim and bus ops */
 
+#ifdef CONFIG_MMC_UNSAFE_RESUME
+	struct mutex		carddetect_lock;
+#endif
 	struct mmc_ios		ios;		/* current io bus settings */
 	u32			ocr;		/* the current OCR setting */
 
