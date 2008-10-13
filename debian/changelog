@@ -1,3 +1,20 @@
+linux-2.6 (2.6.25-18) asimov; urgency=low
+
+  * PM: Run rtc_hctosys after resume from autosuspend
+  * Add autosaving time to RTC on settimeofday()
+  * Update configs for new RTC changes
+  * FTC: forgotten systohc.c added
+  * eink_apollofb: Add full redraw with screen refresh
+  * eink_apollofb: Make sleep mode work without refreshing after wakeup
+  * mach V3: Revert erroneous commented timings for V3ext NAND
+  * MMC: Fix race condition in card detect functions
+  * PM: delay autosuspend when timers are scheduled in next timeout
+    interval
+  * lbookv3_keys: Rewrite driver
+  * V3: Update configs
+
+ -- Yauhen Kharuzhy <jekhor@gmail.com>  Mon, 13 Oct 2008 18:41:16 +0300
+
 linux-2.6 (2.6.25-17) unstable; urgency=low
 
   * Fix STORAGE partition size on V3ext.
