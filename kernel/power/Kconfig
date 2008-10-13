@@ -112,6 +112,14 @@ config PM_AUTOSUSPEND
 	help
 	  Enable automatic suspend to RAM on idle
 
+config PM_AUTOSUSPEND_WITH_TIMERS
+	bool "See on next timer time"
+	depends on PM_AUTOSUSPEND
+	depends on NO_IDLE_HZ || NO_HZ
+	default y
+	help
+	  Enable accounting of next timer time in autosuspend time calculation.
+
 config SUSPEND_FREEZER
 	bool "Enable freezer for suspend to RAM/standby" \
 		if ARCH_WANTS_FREEZER_CONTROL || BROKEN

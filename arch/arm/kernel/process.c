@@ -153,11 +153,17 @@ static void default_idle(void)
 {
 #ifdef CONFIG_PM_AUTOSUSPEND
 	static u64 last_cpustat_procs = 0;
-	u64 curr_cpustat_procs = kstat_this_cpu.cpustat.user + kstat_this_cpu.cpustat.system;
+	u64 curr_cpustat_procs = kstat_this_cpu.cpustat.user +
+		kstat_this_cpu.cpustat.system + kstat_this_cpu.cpustat.nice;
 
 	if (pm_autosuspend_enabled && !autosuspend_in_progress) {
-		if (curr_cpustat_procs > last_cpustat_procs)
+		if (curr_cpustat_procs != last_cpustat_procs)
 			sleep_idle_time = jiffies + pm_autosuspend_timeout;
+
+#ifdef CONFIG_PM_AUTOSUSPEND_WITH_TIMERS
+		if (time_before(get_next_timer_interrupt(jiffies), sleep_idle_time))
+			sleep_idle_time = next_timer_interrupt() + pm_autosuspend_timeout;
+#endif
 
 		last_cpustat_procs = curr_cpustat_procs;
 
