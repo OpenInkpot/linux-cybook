@@ -616,6 +616,11 @@ static void nand_command_lp(struct mtd_info *mtd, unsigned int command,
 			chip->cmd_ctrl(mtd, column >> 8, ctrl);
 		}
 		if (page_addr != -1) {
+#ifdef CONFIG_MTD_NAND_DUMB_BADBLOCK_TRANSLATION
+			if ((chip->options & NAND_USE_DUMB_BB_TRANSLATION) &&
+					nand_isbad_bbt(mtd, page_addr << chip->page_shift, 1))
+				page_addr = nand_translate_bad(chip, page_addr << chip->page_shift) >> chip->page_shift;
+#endif
 			chip->cmd_ctrl(mtd, page_addr, ctrl);
 			chip->cmd_ctrl(mtd, page_addr >> 8,
 				       NAND_NCE | NAND_ALE);
