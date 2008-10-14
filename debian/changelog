@@ -1,3 +1,10 @@
+linux-2.6 (2.6.25-20) asimov; urgency=low
+
+  * Revert "mach V3: Revert erroneous commented timings for V3ext NAND"
+  * lbookv3_keys: Increase polling interval
+
+ -- Yauhen Kharuzhy <jekhor@gmail.com>  Tue, 14 Oct 2008 17:31:53 +0300
+
 linux-2.6 (2.6.25-19) asimov; urgency=low
 
   * MTD NAND: Add dumb badblock translation to large page devices
