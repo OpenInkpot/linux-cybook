@@ -28,7 +28,7 @@
 #include <mach/hardware.h>
 #include <mach/regs-gpio.h>
 
-#define KEYB_DELAY		(15 * HZ / 1000)
+#define KEYB_DELAY		(30 * HZ / 1000)
 #define LONGPRESS_TIME		(HZ * 6 / 10) /* 0.6 seconds */
 
 static unsigned long int column_pins[] = {
