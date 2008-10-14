@@ -207,7 +207,8 @@ static struct s3c2410_nand_set lbookv3_nand_sets[] = {
 
 
 static struct s3c2410_platform_nand lbookv3_nand_info = {
-#ifdef CONFIG_ARCH_LBOOK_V3_EXT
+//#ifdef CONFIG_ARCH_LBOOK_V3_EXT
+#if 0
 	.tacls		= 12,
 	.twrph0		= 12,
 	.twrph1		= 10,
