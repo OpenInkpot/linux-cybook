@@ -53,7 +53,7 @@ static struct timer_list kb_timer;
 
 static inline void set_col(int col, int to)
 {
-	gpio_set_value(column_pins[col], to);
+	s3c2410_gpio_setpin(column_pins[col], to);
 }
 
 static void set_columns_to(int to)
@@ -61,8 +61,8 @@ static void set_columns_to(int to)
 	int j;
 
 	for (j = 0; j < ARRAY_SIZE(column_pins); j++) {
-		while ((!!gpio_get_value(column_pins[j]) != to))
-			gpio_set_value(column_pins[j], to);
+		while ((!!s3c2410_gpio_getpin(column_pins[j]) != to))
+			s3c2410_gpio_setpin(column_pins[j], to);
 	}
 }
 
@@ -74,7 +74,7 @@ static int wait_for_rows_high(void)
 		int is_low = 0;
 
 		for (i = 0; i < ARRAY_SIZE(row_pins); i++)
-			if (!gpio_get_value(row_pins[i]))
+			if (!s3c2410_gpio_getpin(row_pins[i]))
 				is_low = 1;
 		if (!is_low)
 			break;
@@ -115,7 +115,7 @@ static void lbookv3_keys_kb_timer(unsigned long data)
 		udelay(30);
 
 		for (row = 0; row < ARRAY_SIZE(row_pins); row++) {
-			if (!gpio_get_value(row_pins[row])) {
+			if (!s3c2410_gpio_getpin(row_pins[row])) {
 				if (!keypad_state[row][col]) {
 					keypad_state[row][col] = jiffies + LONGPRESS_TIME;
 				} else {
