@@ -139,6 +139,9 @@ struct mmc_host {
 #ifdef CONFIG_MMC_DEBUG
 	unsigned int		removed:1;	/* host is being removed */
 #endif
+#ifdef CONFIG_MMC_UNSAFE_RESUME
+	unsigned int		suspended:1;
+#endif
 
 	struct mmc_card		*card;		/* device attached to this host */
 
