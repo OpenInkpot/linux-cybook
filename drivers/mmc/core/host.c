@@ -82,9 +82,6 @@ struct mmc_host *mmc_alloc_host(int extra, struct device *dev)
 	device_initialize(&host->class_dev);
 
 	spin_lock_init(&host->lock);
-#ifdef CONFIG_MMC_UNSAFE_RESUME
-	mutex_init(&host->carddetect_lock);
-#endif
 	init_waitqueue_head(&host->wq);
 	INIT_DELAYED_WORK(&host->detect, mmc_rescan);
 
