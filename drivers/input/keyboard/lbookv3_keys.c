@@ -31,6 +31,9 @@
 #define KEYB_DELAY		(30 * HZ / 1000)
 #define LONGPRESS_TIME		(HZ * 6 / 10) /* 0.6 seconds */
 
+static unsigned long poll_interval = KEYB_DELAY;
+static unsigned long longpress_time = LONGPRESS_TIME;
+
 static unsigned long int column_pins[] = {
 	S3C2410_GPG6, S3C2410_GPG7, S3C2410_GPG8, S3C2410_GPG9, S3C2410_GPG10,
 	S3C2410_GPG11, S3C2410_GPG4,
@@ -117,7 +120,7 @@ static void lbookv3_keys_kb_timer(unsigned long data)
 		for (row = 0; row < ARRAY_SIZE(row_pins); row++) {
 			if (!s3c2410_gpio_getpin(row_pins[row])) {
 				if (!keypad_state[row][col]) {
-					keypad_state[row][col] = jiffies + LONGPRESS_TIME;
+					keypad_state[row][col] = jiffies + longpress_time;
 				} else {
 					if (time_after(jiffies, keypad_state[row][col]) &&
 							(keypad_state[row][col] > 1)) {
@@ -150,7 +153,7 @@ static void lbookv3_keys_kb_timer(unsigned long data)
 	udelay(10);
 	cfg_rows_to(S3C2410_GPIO_IRQ);
 	if (pressed & !timer_pending(&kb_timer)) {
-		kb_timer.expires = jiffies + KEYB_DELAY;
+		kb_timer.expires = jiffies + poll_interval;
 		add_timer(&kb_timer);
 	}
 }
@@ -183,6 +186,39 @@ static irqreturn_t lbookv3_keys_isr(int irq, void *dev_id)
 
 	return IRQ_HANDLED;
 }
+
+static int lbookv3_keys_poll_interval_show(struct device *dev,
+		struct device_attribute *attr, char *buf)
+{
+	return sprintf(buf, "%lu\n", poll_interval * 1000 / HZ);
+}
+
+static int lbookv3_keys_poll_interval_store(struct device *dev,
+		struct device_attribute *attr, const char *buf, size_t size)
+{
+	poll_interval = simple_strtoul(buf, NULL, 10) * HZ / 1000;
+
+	return size;
+}
+
+static int lbookv3_keys_longpress_time_show(struct device *dev,
+		struct device_attribute *attr, char *buf)
+{
+	return sprintf(buf, "%lu\n", longpress_time * 1000 / HZ);
+}
+
+static int lbookv3_keys_longpress_time_store(struct device *dev,
+		struct device_attribute *attr, const char *buf, size_t size)
+{
+	longpress_time = simple_strtoul(buf, NULL, 10) * HZ / 1000;
+
+	return size;
+}
+
+DEVICE_ATTR(poll_interval, 0644, lbookv3_keys_poll_interval_show,
+		lbookv3_keys_poll_interval_store);
+DEVICE_ATTR(longpress_time, 0644, lbookv3_keys_longpress_time_show,
+		lbookv3_keys_longpress_time_store);
 
 static struct input_dev *input;
 static int __init lbookv3_keys_init(void)
@@ -226,8 +262,18 @@ static int __init lbookv3_keys_init(void)
 	error = input_register_device(input);
 	if (error) {
 		printk(KERN_ERR "Unable to register lbookv3-keys input device\n");
-		goto fail1;
+		input_free_device(input);
+		return -ENOMEM;
 	}
+
+	error = device_create_file(&input->dev, &dev_attr_poll_interval);
+	if (error)
+		goto err_add_poll_interval;
+
+	error = device_create_file(&input->dev, &dev_attr_longpress_time);
+	if (error)
+		goto err_add_longpress_time;
+
 
 	lbookv3_powerkey_isr(0, input);
 	lbookv3_keys_isr(0, input);
@@ -270,8 +316,10 @@ fail_reg_eint6:
 	for (i = i - 1; i >= S3C2410_GPF0; i--)
 		free_irq(s3c2410_gpio_getirq(i), input);
 
-	input_free_device(input);
-fail1:
+	device_remove_file(&input->dev, &dev_attr_poll_interval);
+err_add_poll_interval:
+	device_remove_file(&input->dev, &dev_attr_longpress_time);
+err_add_longpress_time:
 
 	return error;
 }
