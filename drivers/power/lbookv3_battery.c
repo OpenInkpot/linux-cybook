@@ -20,6 +20,7 @@
 #include <linux/interrupt.h>
 
 #include <mach/regs-gpio.h>
+#include <asm/plat-s3c/regs-adc.h>
 #include <mach/io.h>
 #include <asm/mach/map.h>
 #include <asm/io.h>
@@ -343,12 +344,35 @@ static int lbookv3_battery_remove(struct platform_device *dev)
 	return 0;
 }
 
+#ifdef CONFIG_PM
+static int lbookv3_battery_suspend(struct platform_device *pdev, pm_message_t message)
+{
+	__raw_writel(__raw_readl(adc_base + S3C2410_ADCCON) |
+			S3C2410_ADCCON_STDBM, adc_base + S3C2410_ADCCON);
+	return 0;
+}
+
+static int lbookv3_battery_resume(struct platform_device *pdev)
+{
+	__raw_writel(__raw_readl(adc_base + S3C2410_ADCCON) ^
+			S3C2410_ADCCON_STDBM, adc_base + S3C2410_ADCCON);
+	return 0;
+}
+
+
+#else
+#define lbookv3_battery_suspend NULL
+#define lbookv3_battery_resume NULL
+#endif
+
 static struct platform_driver lbookv3_battery_driver = {
 	.driver = {
 		.name = "lbookv3-battery",
 	},
 	.probe = lbookv3_battery_probe,
 	.remove = lbookv3_battery_remove,
+	.suspend = lbookv3_battery_suspend,
+	.resume = lbookv3_battery_resume,
 };
 
 static int __init lbookv3_battery_init(void)
