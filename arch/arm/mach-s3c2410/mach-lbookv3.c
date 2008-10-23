@@ -433,7 +433,6 @@ static struct platform_device *lbookv3_devices[] __initdata = {
 	&s3c_device_nand,
 	&s3c_device_rtc,
 	&s3c_device_adc,
-	&s3c_device_hsmmc,
 	&s3c_device_spi0,
 	&s3c_device_sdi,
 	&s3c_device_timer[0],
