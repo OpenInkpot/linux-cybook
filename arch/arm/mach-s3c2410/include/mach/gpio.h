@@ -16,3 +16,10 @@
 #define gpio_cansleep	__gpio_cansleep
 
 #include <asm-generic/gpio.h>
+#include <mach/hardware.h>
+
+#ifdef CONFIG_CPU_S3C2400
+#define gpio_to_irq(gpio)        s3c2400_gpio_getirq(gpio)
+#else
+#define gpio_to_irq(gpio)        s3c2410_gpio_getirq(gpio)
+#endif
