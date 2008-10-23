@@ -35,6 +35,8 @@
 #define LBOOK_V3_BAT_CHRG_PIN		S3C2410_GPG1
 #define LBOOK_V3_BAT_CHRG_PIN_INP		S3C2410_GPG1_INP
 
+static int buggy_hardware = 0;
+
 static void __iomem *adc_base;
 static struct clk* adc_clk;
 
@@ -285,18 +287,20 @@ static int lbookv3_battery_probe(struct platform_device *dev)
 
 	enable_irq_wake(irq);
 
-	irq = s3c2410_gpio_getirq(LBOOK_V3_BAT_CHRG_PIN);
-	ret = request_irq(irq, lbookv3_battery_change_irq,
-			IRQF_TRIGGER_RISING
-			| IRQF_TRIGGER_FALLING | IRQF_SHARED,
-			"lbookv3-battery", &lbookv3_battery);
+	if (!buggy_hardware) {
+		irq = s3c2410_gpio_getirq(LBOOK_V3_BAT_CHRG_PIN);
+		ret = request_irq(irq, lbookv3_battery_change_irq,
+				IRQF_TRIGGER_RISING
+				| IRQF_TRIGGER_FALLING | IRQF_SHARED,
+				"lbookv3-battery", &lbookv3_battery);
 
-	if (ret) {
-		printk(KERN_ERR "lbookv3_battery: could not request CHRG irq\n");
-		goto err_chrg_irq;
+		if (ret) {
+			printk(KERN_ERR "lbookv3_battery: could not request CHRG irq\n");
+			goto err_chrg_irq;
+		}
+
+		enable_irq_wake(irq);
 	}
-
-	enable_irq_wake(irq);
 
 	irq = s3c2410_gpio_getirq(LBOOK_V3_BAT_LOWBAT_PIN);
 	ret = request_irq(irq, lbookv3_battery_change_irq,
@@ -331,11 +335,13 @@ err1:
 static int lbookv3_battery_remove(struct platform_device *dev)
 {
 	disable_irq_wake(s3c2410_gpio_getirq(LBOOK_V3_BAT_LOWBAT_PIN));
-	disable_irq_wake(s3c2410_gpio_getirq(LBOOK_V3_BAT_CHRG_PIN));
 	disable_irq_wake(s3c2410_gpio_getirq(S3C2410_GPF4));
 	free_irq(s3c2410_gpio_getirq(LBOOK_V3_BAT_LOWBAT_PIN), &lbookv3_battery);
-	free_irq(s3c2410_gpio_getirq(LBOOK_V3_BAT_CHRG_PIN), &lbookv3_battery);
 	free_irq(s3c2410_gpio_getirq(S3C2410_GPF4), &lbookv3_usb);
+	if (!buggy_hardware) {
+		disable_irq_wake(s3c2410_gpio_getirq(LBOOK_V3_BAT_CHRG_PIN));
+		free_irq(s3c2410_gpio_getirq(LBOOK_V3_BAT_CHRG_PIN), &lbookv3_battery);
+	}
 	power_supply_unregister(&lbookv3_usb);
 	power_supply_unregister(&lbookv3_battery);
 	clk_disable(adc_clk);
@@ -393,3 +399,5 @@ MODULE_AUTHOR("Piter Konstantinov <pit.here@gmail.com>");
 MODULE_AUTHOR("Yauhen Kharuzhy <jekhor@gmail.com>");
 MODULE_DESCRIPTION("Battery driver for lbook v3");
 MODULE_LICENSE("GPL");
+
+module_param(buggy_hardware, int, 0444);
