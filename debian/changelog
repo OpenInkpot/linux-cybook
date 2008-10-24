@@ -1,3 +1,30 @@
+linux-2.6 (2.6.27-1) asimov; urgency=low
+
+  [ Yauhen Kharuzhy ]
+  * lbookv3_keys: Fix using of GPIO functions
+  * rtc-s3c: Fix section mismatch warnings
+  * Revert "MMC: Fix race condition in card detect functions"
+  * MMC: Fix race condition in resume/card detect code
+
+  [ Dallas Foley ]
+  * [ARM] S3C24XX: pwm-clock set_parent mask fix
+
+  [ Nelson Castillo ]
+  * [ARM] S3C24XX: Fix redefine of DEFINE_TIMER() in s3c24xx pwm-clock.c
+
+  [ Yauhen Kharuzhy ]
+  * V3 mach: move ADC suspend/resume to battery driver
+  * RTC S3C: Add device_init_wakeup() invokation
+  * Add gpio_to_irq() to s3c2410 arch
+  * V3 arch: Add blinking by red LED on panic
+  * V3 arch: remove s3c_device_hsmmc from platform devices
+  * MMC: Replace mmc_delay() by mdelay() in mmc_power_up()
+  * lbookv3_keys: Add tweaks for poll interval and longpress timeout
+  * lbookv3_battery: Add workaround for buggy hardware. Closes: #155
+  * Update configs
+
+ -- Yauhen Kharuzhy <jekhor@gmail.com>  Fri, 24 Oct 2008 01:18:33 +0300
+
 linux-2.6 (2.6.25-20) asimov; urgency=low
 
   * Revert "mach V3: Revert erroneous commented timings for V3ext NAND"
