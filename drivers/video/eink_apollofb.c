@@ -48,6 +48,7 @@
 struct apollofb_options {
 	unsigned int manual_refresh_thr;
 	unsigned int use_sleep_mode:1;
+	unsigned int disable_auto_redraw:1;
 };
 
 struct apollofb_par {
@@ -228,7 +229,8 @@ static void apollofb_apollo_update_part(struct apollofb_par *par,
 
 	dev_dbg(info->dev, "%s: stop loading\n", __FUNCTION__);
 	apollo_send_command(par, APOLLO_STOP_LOADING);
-	apollo_send_command(par, APOLLO_DISPLAY_PARTIAL_PICTURE);
+	if (!par->options.disable_auto_redraw)
+		apollo_send_command(par, APOLLO_DISPLAY_PARTIAL_PICTURE);
 
 	if (last_fragment) {
 		apollo_send_command(par, APOLLO_CANCEL_AUTO_REFRESH);
@@ -477,6 +479,56 @@ static int apollofb_set_par(struct fb_info *info)
 	return 0;
 }
 
+static int apollofb_ioctl(struct fb_info *info, unsigned int cmd,
+		                       unsigned long arg)
+{
+	int retval = -EFAULT;
+	struct apollofb_par *par = info->par;
+	unsigned int val;
+
+	switch(cmd) {
+		case FBIO_WAITFORVSYNC:
+			flush_work(&info->deferred_work.work);
+			retval = 0;
+			break;
+
+		case EINK_APOLLOFB_IOCTL_SET_AUTOREDRAW:
+			if (get_user(val, (unsigned int __user *) arg))
+				break;
+
+			par->options.disable_auto_redraw = !val;
+			retval = 0;
+			break;
+			
+		case EINK_APOLLOFB_IOCTL_FORCE_REDRAW:
+			mutex_lock(&par->lock);
+			apollo_send_command(par, APOLLO_AUTO_REFRESH);
+			apollo_send_command(par, APOLLO_MANUAL_REFRESH);
+			apollo_send_command(par, APOLLO_DISPLAY_PARTIAL_PICTURE);
+			apollo_send_command(par, APOLLO_CANCEL_AUTO_REFRESH);
+			mutex_unlock(&par->lock);
+			retval = 0;
+			break;
+		case EINK_APOLLOFB_IOCTL_SHOW_PREVIOUS:
+			mutex_lock(&par->lock); 
+			apollo_send_command(par, APOLLO_AUTO_REFRESH);
+			apollo_send_command(par, APOLLO_MANUAL_REFRESH);
+			apollo_send_command(par, APOLLO_RESTORE_IMAGE);
+			apollo_send_command(par, APOLLO_CANCEL_AUTO_REFRESH);
+			mutex_unlock(&par->lock);
+			retval = 0;
+			break;
+
+		default:
+			retval = -ENOIOCTLCMD;
+			break;
+	}
+
+	return retval;
+}
+
+
+
 static ssize_t apollofb_wf_read(struct file *f, char __user *buf,
 				size_t count, loff_t *f_pos)
 {
@@ -636,6 +688,40 @@ static ssize_t apollofb_manual_refresh_thr_store(struct device *dev,
 	return -EINVAL;
 }
 
+static ssize_t apollofb_disable_auto_redraw_show(struct device *dev,
+		struct device_attribute *attr, char *buf)
+{
+	struct fb_info *info = dev_get_drvdata(dev);
+	struct apollofb_par *par = info->par;
+
+	return sprintf(buf, "%u\n", par->options.disable_auto_redraw);
+}
+
+static ssize_t apollofb_disable_auto_redraw_store(struct device *dev,
+		struct device_attribute *attr, const char *buf, size_t size)
+{
+	struct fb_info *info = dev_get_drvdata(dev);
+	struct apollofb_par *par = info->par;
+	unsigned int val;
+
+	if (!strict_strtoul(buf, 10, &val)) {
+		if ((par->options.disable_auto_redraw == 1) 
+				&& !val) {
+			mutex_lock(&par->lock);
+			apollo_send_command(par, APOLLO_AUTO_REFRESH);
+			apollo_send_command(par, APOLLO_MANUAL_REFRESH);
+			apollo_send_command(par, APOLLO_DISPLAY_PARTIAL_PICTURE);
+			apollo_send_command(par, APOLLO_CANCEL_AUTO_REFRESH);
+			mutex_unlock(&par->lock);
+		}
+		par->options.disable_auto_redraw = val;
+
+		return size;
+	} else {
+		return -EINVAL;
+	}
+}
+
 static ssize_t apollofb_manual_refresh_thr_max_show(struct device *dev,
 		struct device_attribute *attr, char *buf)
 {
@@ -728,6 +814,8 @@ DEVICE_ATTR(defio_delay, 0666,
 		apollofb_defio_delay_show, apollofb_defio_delay_store);
 DEVICE_ATTR(use_sleep_mode, 0666,
 		apollofb_use_sleep_mode_show, apollofb_use_sleep_mode_store);
+DEVICE_ATTR(disable_auto_redraw, 0666,
+		apollofb_disable_auto_redraw_show, apollofb_disable_auto_redraw_store);
 
 static struct file_operations apollofb_wf_fops = {
 	.owner = THIS_MODULE,
@@ -749,6 +837,7 @@ static struct fb_ops apollofb_ops = {
 	.fb_check_var	= apollofb_check_var,
 	.fb_set_par	= apollofb_set_par,
 	.fb_blank	= apollofb_blank,
+	.fb_ioctl	= apollofb_ioctl,
 };
 
 static struct fb_deferred_io apollofb_defio = {
@@ -928,9 +1017,14 @@ static int __devinit apollofb_probe(struct platform_device *dev)
 	if (retval)
 		goto err_devattr_use_sleep_mode;
 
+	retval = device_create_file(info->dev, &dev_attr_disable_auto_redraw);
+	if (retval)
+		goto err_devattr_disable_auto_redraw;
+
 	return 0;
 
-
+	device_remove_file(info->dev, &dev_attr_disable_auto_redraw);
+err_devattr_disable_auto_redraw:
 	device_remove_file(info->dev, &dev_attr_use_sleep_mode);
 err_devattr_use_sleep_mode:
 	device_remove_file(info->dev, &dev_attr_defio_delay);
@@ -961,6 +1055,7 @@ static int __devexit apollofb_remove(struct platform_device *dev)
 		cancel_delayed_work(&par->deferred_work);
 		flush_scheduled_work();
 
+		device_remove_file(info->dev, &dev_attr_disable_auto_redraw);
 		device_remove_file(info->dev, &dev_attr_use_sleep_mode);
 		device_remove_file(info->dev, &dev_attr_manual_refresh_threshold_max);
 		device_remove_file(info->dev, &dev_attr_manual_refresh_threshold);

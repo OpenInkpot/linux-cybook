@@ -58,3 +58,9 @@ struct eink_apollofb_platdata {
 	unsigned long defio_delay;
 };
 
+#ifndef FBIO_WAITFORVSYNC
+#define FBIO_WAITFORVSYNC       _IOW('F', 0x20, __u32)
+#endif
+#define EINK_APOLLOFB_IOCTL_SET_AUTOREDRAW _IOW('F', 0x21, unsigned int)
+#define EINK_APOLLOFB_IOCTL_FORCE_REDRAW _IO('F', 0x22)
+#define EINK_APOLLOFB_IOCTL_SHOW_PREVIOUS _IO('F', 0x23)
