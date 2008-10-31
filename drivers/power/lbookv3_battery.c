@@ -77,6 +77,9 @@ static int lbookv3_battery_get_capacity(struct power_supply *b)
 
 	voltage = lbookv3_battery_get_voltage(b);
 
+	if (voltage < LBOOK_V3_MIN_VOLT)
+		voltage = LBOOK_V3_MIN_VOLT;
+
 	if (voltage > LBOOK_V3_5PERC_VOLT)
 		return ((voltage - LBOOK_V3_5PERC_VOLT) * 95)/(LBOOK_V3_MAX_VOLT-LBOOK_V3_5PERC_VOLT);
 	else
@@ -102,7 +105,10 @@ static int lbookv3_battery_get_status(struct power_supply *b)
 		if (lbookv3_usb_connected())
 			return POWER_SUPPLY_STATUS_NOT_CHARGING;
 		else
-			return POWER_SUPPLY_STATUS_DISCHARGING;
+			if (s3c2410_gpio_getpin(LBOOK_V3_BAT_LOWBAT_PIN))
+				return POWER_SUPPLY_STATUS_DISCHARGING;
+			else
+				return POWER_SUPPLY_STATUS_LOW_CHARGE;
 }
 
 static enum power_supply_property lbookv3_battery_props[] = 
