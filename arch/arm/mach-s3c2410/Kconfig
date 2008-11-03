@@ -72,6 +72,13 @@ config ARCH_LBOOK_V3_EXT
 	help
 	  Say Y here if you have a new modification of V3 (with 512 MiB of internal Flash ROM)
 
+config ARCH_EB600
+	bool "Netronix EB600"
+	select CPU_S3C2410
+	select MACH_SMDK
+	help
+	  Support for Netronix EB600
+
 config ARCH_H1940
 	bool "IPAQ H1940"
 	select CPU_S3C2410

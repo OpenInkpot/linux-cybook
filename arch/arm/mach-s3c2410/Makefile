@@ -21,6 +21,7 @@ obj-$(CONFIG_S3C2410_CLOCK)	+= clock.o
 
 obj-$(CONFIG_ARCH_SMDK2410)	+= mach-smdk2410.o
 obj-$(CONFIG_ARCH_LBOOK_V3)	+= mach-lbookv3.o
+obj-$(CONFIG_ARCH_EB600)	+= mach-eb600.o
 obj-$(CONFIG_ARCH_H1940)	+= mach-h1940.o h1940-bluetooth.o
 obj-$(CONFIG_PM_H1940)		+= pm-h1940.o
 obj-$(CONFIG_MACH_N30)		+= mach-n30.o
