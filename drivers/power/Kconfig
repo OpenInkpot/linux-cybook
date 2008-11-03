@@ -68,4 +68,11 @@ config BATTERY_LBOOKV3
 	help
 	  Say Y to enable support for the battery in HanLin/lBook eReader V3.
 
+config BATTERY_S3C
+	tristate "S3C24xx ADC battery driver"
+	depends on ARCH_EB600
+	help
+	  Stupid driver that uses the ADC in the S3C24xx SoC.
+	  This is useful only as a platform driver.
+
 endif # POWER_SUPPLY
