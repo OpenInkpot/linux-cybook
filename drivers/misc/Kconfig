@@ -475,4 +475,12 @@ config SGI_GRU_DEBUG
 	This option enables addition debugging code for the SGI GRU driver. If
 	you are unsure, say N.
 
+config EB600_EXTRAS
+	bool "EB600 Extras"
+	default n
+	help
+	  Say Y here if you want to control the USB devices present in the EB600.
+
+	  If unsure, say N.
+
 endif # MISC_DEVICES
