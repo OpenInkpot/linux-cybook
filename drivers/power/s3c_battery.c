@@ -4,12 +4,13 @@
  *  Palm TX battery driver by Jan Herman <2hp@seznam.cz> 
  */
 
+#include <linux/module.h>
+
 MODULE_AUTHOR("Ondra Herman <xherman1@fi.muni.cz>");
 MODULE_DESCRIPTION("Generic S3C24XX ADC battery driver");
 MODULE_LICENSE("GPL");
 
 #include <linux/kernel.h>
-#include <linux/module.h>
 #include <linux/platform_device.h>
 #include <linux/power_supply.h>
 #include <linux/apm-emulation.h>
@@ -17,9 +18,10 @@ MODULE_LICENSE("GPL");
 #include <linux/err.h>
 #include <linux/s3c_battery.h>
 
-#include <asm/arch/gpio.h>
+#include <mach/regs-gpio.h>
+
+#include <asm/gpio.h>
 #include <asm/io.h>
-#include <asm/arch/io.h>
 #include <asm/mach/map.h>
 #include <asm/plat-s3c/regs-adc.h>
 

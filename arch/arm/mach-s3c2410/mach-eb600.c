@@ -45,24 +45,24 @@
 #include <asm/mach/arch.h>
 #include <asm/mach/map.h>
 #include <asm/mach/irq.h>
-#include <asm/hardware.h>
+#include <mach/hardware.h>
+
 #include <asm/io.h>
 #include <asm/irq.h>
 #include <asm/mach-types.h>
+#include <asm/delay.h>
 
 #include <asm/plat-s3c/regs-serial.h>
 #include <asm/plat-s3c/nand.h>
 #include <asm/plat-s3c24xx/devs.h>
 #include <asm/plat-s3c24xx/cpu.h>
 #include <asm/plat-s3c24xx/pm.h>
+#include <asm/plat-s3c24xx/mci.h>
 
-#include <asm/arch/mci.h>
-#include <asm/arch/regs-gpio.h>
-#include <asm/arch/usb-control.h>
-#include <asm/arch/regs-clock.h>
-#include <asm/arch/leds-gpio.h>
-
-#include <asm/delay.h>
+#include <mach/regs-gpio.h>
+#include <mach/usb-control.h>
+#include <mach/regs-clock.h>
+#include <mach/leds-gpio.h>
 
 
 static struct map_desc eb600_iodesc[] __initdata = {
@@ -405,7 +405,7 @@ static struct platform_device *eb600_devices[] __initdata = {
 	&eb600_apollo,
 	&eb600_flash,
 
-	&s3c_device_timer0,
+	&s3c_device_timer[0],
 	&s3c_device_wdt,
 	&s3c_device_usb,
 #ifdef CONFIG_EB600_EXTRAS

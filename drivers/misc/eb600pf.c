@@ -5,13 +5,18 @@
 #include <linux/init.h>
 #include <linux/platform_device.h>
 #include <linux/version.h>
-#include <asm/gpio.h>
 #include <linux/pm.h>
 #include <linux/interrupt.h>
 #include <linux/irq.h>
 #include <linux/workqueue.h>
 #include <linux/delay.h>
-#include <asm/arch/usb-control.h>
+
+#include <mach/hardware.h>
+#include <mach/usb-control.h>
+#include <mach/regs-gpio.h>
+
+#include <asm/gpio.h>
+#include <asm/io.h>
 
 MODULE_AUTHOR("Ondrej Herman <ondra.herman@gmail.com>");
 MODULE_DESCRIPTION("EB600 platform control");
