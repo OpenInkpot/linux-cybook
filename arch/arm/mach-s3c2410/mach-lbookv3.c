@@ -95,7 +95,7 @@ static struct s3c24xx_led_platdata lbookv3_pdata_led_red = {
 	.gpio		= S3C2410_GPC5,
 	.flags		= 0,
 	.name		= "led:red",
-	.def_trigger	= "mmc0",
+	.def_trigger	= "lbookv3_battery-charging",
 };
 
 static struct s3c24xx_led_platdata lbookv3_pdata_led_green = {
@@ -424,6 +424,11 @@ static struct platform_device lbookv3_battery = {
 	.id		= -1,
 };
 
+static struct platform_device lbookv3_speaker = {
+	.name		= "lbookv3-speaker",
+	.id		= -1,
+};
+
 static struct platform_device *lbookv3_devices[] __initdata = {
 	&s3c_device_wdt,
 	&s3c_device_i2c,
@@ -442,6 +447,7 @@ static struct platform_device *lbookv3_devices[] __initdata = {
 	&lbookv3_apollo,
 	&lbookv3_keys,
 	&lbookv3_battery,
+	&lbookv3_speaker,
 };
 
 static void lbookv3_power_off(void)

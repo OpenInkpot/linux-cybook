@@ -12,6 +12,12 @@ menuconfig INPUT_MISC
 
 if INPUT_MISC
 
+config INPUT_LBOOKV3_SPKR
+	tristate "HanLin/lBook eReader V3 speaker"
+	depends on S3C24XX_PWM && ARCH_LBOOK_V3
+	help
+	  Support for lBook eReader V3 speaker.
+
 config INPUT_PCSPKR
 	tristate "PC Speaker support"
 	depends on PCSPKR_PLATFORM

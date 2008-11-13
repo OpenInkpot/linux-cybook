@@ -1,3 +1,13 @@
+linux-2.6 (2.6.27-2) asimov; urgency=low
+
+  * eink_apollofb: Test version of double-buffering API
+  * lbookv3_battery: Introduce new status: Low charge
+  * eink_apollofb: Fix double-buffering API
+  * Lbook V3 speaker driver
+  * Change default trigger for red LED to "lbookv3_battery-charging"
+
+ -- Yauhen Kharuzhy <jekhor@gmail.com>  Wed, 12 Nov 2008 16:00:53 +0200
+
 linux-2.6 (2.6.27-1) asimov; urgency=low
 
   [ Yauhen Kharuzhy ]

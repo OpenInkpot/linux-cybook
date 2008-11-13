@@ -55,6 +55,7 @@ struct apollofb_par {
 	struct fb_info *info;
 	struct mutex lock;
 	struct delayed_work deferred_work;
+	wait_queue_head_t defio_wait;
 	struct cdev cdev;
 	struct apollofb_options options;
 	int current_mode;
@@ -70,7 +71,7 @@ static struct fb_fix_screeninfo apollofb_fix __devinitdata = {
 	.ypanstep =	0,
 	.ywrapstep =	0,
 	.line_length =	DPY_W / (8 / 8),
-	.accel =	FB_ACCEL_NONE,
+	.accel =	FB_ACCEL_EINK_APOLLO,
 };
 
 static struct fb_var_screeninfo apollofb_var __devinitdata = {
@@ -306,6 +307,7 @@ static void apollofb_dpy_deferred_io(struct fb_info *info,
 	}
 	mutex_unlock(&par->lock);
 
+	wake_up_interruptible(&par->defio_wait);
 	dev_dbg(info->dev, "%s finished\n", __FUNCTION__);
 }
 
@@ -488,15 +490,15 @@ static int apollofb_ioctl(struct fb_info *info, unsigned int cmd,
 
 	switch(cmd) {
 		case FBIO_WAITFORVSYNC:
-			flush_work(&info->deferred_work.work);
-			retval = 0;
+			if (delayed_work_pending(&info->deferred_work))
+				retval = wait_event_interruptible(par->defio_wait, !delayed_work_pending(&info->deferred_work));
+			else
+				retval = 0;
 			break;
 
 		case EINK_APOLLOFB_IOCTL_SET_AUTOREDRAW:
-			if (get_user(val, (unsigned int __user *) arg))
-				break;
-
-			par->options.disable_auto_redraw = !val;
+			par->options.disable_auto_redraw = !arg;
+			printk("disable_auto_redraw = %d\n", par->options.disable_auto_redraw);
 			retval = 0;
 			break;
 			
@@ -936,6 +938,7 @@ static int __devinit apollofb_probe(struct platform_device *dev)
 	par->info = info;
 	mutex_init(&par->lock);
 	INIT_DELAYED_WORK(&par->deferred_work, apollofb_deferred_work);
+	init_waitqueue_head(&par->defio_wait);
 	par->options.manual_refresh_thr = apollofb_get_screenpages_count(info) / 2;
 	par->options.use_sleep_mode = 0;
 	par->ops = &pdata->ops;
