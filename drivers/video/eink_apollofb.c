@@ -171,9 +171,20 @@ static void apollo_wakeup(struct apollofb_par *par)
 	udelay(100);
 	par->ops->set_ctl_pin(H_DS, 0);
 	apollo_wait_for_ack(par);
+
+#ifndef CONFIG_ARCH_EB600
 	par->ops->set_ctl_pin(H_WUP, 0);
 	par->ops->set_ctl_pin(H_DS, 1);
 	apollo_wait_for_ack_clear(par);
+#else
+#warning using alternative resuming sequence
+	udelay(100);
+	par->ops->set_ctl_pin(H_DS, 1);
+	udelay(100);
+	apollo_wait_for_ack_clear(par);
+	par->ops->set_ctl_pin(H_WUP, 0);
+#endif
+
 }
 
 static void apollofb_apollo_update_part(struct apollofb_par *par,
